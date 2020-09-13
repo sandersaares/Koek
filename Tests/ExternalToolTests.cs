@@ -275,7 +275,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void ExternalTool_WithCrashInTool_DoesNotHang()
+        public void ExternalTool_WithCrashInTool_DoesNotHang_WindowsOnly()
         {
             using (var package = new EmbeddedPackage(Assembly.GetExecutingAssembly(), "Tests.TestData.CrashingTool", "crypt.xml", "js.dll", "libgpac.dll", "mp4box.exe", "ssleay32.dll", "z.mp4"))
             {
@@ -301,15 +301,11 @@ namespace Tests
 
         private static EmbeddedPackage GetEchoPackage()
         {
-            var echoPackage = new EmbeddedPackage(Assembly.GetExecutingAssembly(), "Tests.TestData.Echo", "Mono.Options.dll", "Tests.Echo.dll", "Tests.Echo.exe", "Tests.Echo.pdb", "Tests.Echo.deps.json", "Tests.Echo.runtimeconfig.json", "Tests.Echo.runtimeconfig.dev.json");
-
-            Helpers.Filesystem.EnsureExecutePermission(Path.Combine(echoPackage.Path, "Tests.Echo.exe"));
-
-            return echoPackage;
+            return new EmbeddedPackage(Assembly.GetExecutingAssembly(), "Tests.TestData.Echo", "Mono.Options.dll", "Tests.Echo.dll", "Tests.Echo.exe", "Tests.Echo.pdb", "Tests.Echo.deps.json", "Tests.Echo.runtimeconfig.json", "Tests.Echo.runtimeconfig.dev.json");
         }
 
         [TestMethod]
-        public void ExternalTool_WithCustomInputProvider_UsesCustomInput()
+        public void ExternalTool_WithCustomInputProvider_UsesCustomInput_WindowsOnly()
         {
             var canary = Encoding.UTF8.GetBytes("sat9pyba8m5yiae5 hya");
 
@@ -331,7 +327,7 @@ namespace Tests
         }
 
         [TestMethod]
-        public void ExternalTool_WithCustomInputProviderUsingSmallBlockSize_UsesCustomInput()
+        public void ExternalTool_WithCustomInputProviderUsingSmallBlockSize_UsesCustomInput_WindowsOnly()
         {
             var canary = Encoding.UTF8.GetBytes("sat9pyba8m5yiae5 hya");
 
@@ -354,7 +350,7 @@ namespace Tests
 
         // NOTE: This can fail to copy the stream in time if the system is under heavy load.
         [TestMethod]
-        public void ExternalTool_WithLargeBinaryCustomInputAndOutput_RoundTripSucceeds()
+        public void ExternalTool_WithLargeBinaryCustomInputAndOutput_RoundTripSucceeds_WindowsOnly()
         {
             var data = new byte[1024 * 1024];
             new Random().NextBytes(data);
