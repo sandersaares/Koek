@@ -23,9 +23,14 @@ jobs:
       with:
         assemblyInfoPath: Koek/AssemblyInfo.cs
         primaryBranch: 'main'
+    - id: make_nuget_version_string
+      uses: sandersaares-actions/make-nuget-version-string@main
+      with:
+        versionstring: ${{ steps.make_version_string.outputs.versionstring }}
+        releaseType: cb
     - uses: sandersaares-actions/expand-tokens@master
       env:
-        VERSIONSTRING: ${{ steps.make_version_string.outputs.versionstring }}
+        VERSIONSTRING: ${{ steps.make_nuget_version_string.outputs.nugetVersionstring }}
       with:
         path: Koek.nuspec
     - name: Build
