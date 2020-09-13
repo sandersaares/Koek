@@ -46,7 +46,7 @@ namespace Tests
             using (var package = new EmbeddedPackage(_testsAssembly, "Tests.TestData", "MediaInfo.dll", "Gangster.xml"))
             {
                 Assert.IsTrue(File.Exists(Path.Combine(package.Path, "MediaInfo.dll")));
-                Assert.IsTrue(File.Exists(Path.Combine(package.Path, "gangster.xml")));
+                Assert.IsTrue(File.Exists(Path.Combine(package.Path, "Gangster.xml")));
             }
         }
     }
