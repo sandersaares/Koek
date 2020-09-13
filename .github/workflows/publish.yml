@@ -39,4 +39,4 @@ jobs:
         name: nupkg
         path: '*.nupkg'
     - name: Publish
-      run: nuget push -ApiKey ${{ secrets.nuget_api_key }} *.nupkg
+      run: nuget push -ApiKey ${{ secrets.nuget_api_key }} -Source https://api.nuget.org/v3/index.json *.nupkg
