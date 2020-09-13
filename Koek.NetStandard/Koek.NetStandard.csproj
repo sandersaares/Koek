@@ -7,6 +7,11 @@
 		<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
 		<LangVersion>latest</LangVersion>
 		<RootNamespace>Koek</RootNamespace>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Include="..\Koek\AssemblyInfo.cs" Link="AssemblyInfo.cs" />
+	</ItemGroup>
 
 </Project>

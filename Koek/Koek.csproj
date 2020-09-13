@@ -6,6 +6,7 @@
 		<Nullable>enable</Nullable>
 		<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
 		<LangVersion>latest</LangVersion>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	</PropertyGroup>
 
 	<ItemGroup>
