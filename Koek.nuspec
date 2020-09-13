@@ -9,6 +9,7 @@
     <authors>sandersaares</authors>
     <description>A pile of useful .NET Core and .NET Standard code.</description>
     <projectUrl>https://github.com/sandersaares/koek</projectUrl>
+    <license type="expression">MIT</license>
   </metadata>
   <files>
     <file src="Koek/bin/Release/netcoreapp3.1/Koek.*" target="lib/netcoreapp3.1" />
