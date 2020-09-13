@@ -37,6 +37,6 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: nupkg
-        path: *.nupkg
+        path: '*.nupkg'
     - name: Publish
       run: nuget push -ApiKey ${{ secrets.nuget_api_key }} *.nupkg
