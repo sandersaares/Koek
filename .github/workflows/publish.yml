@@ -2,6 +2,11 @@ name: Publish
 
 on:
   workflow_dispatch:
+    inputs:
+      release_type:
+        description: 'stable/preview/cb'
+        required: true
+        default: preview
 
 jobs:
   publish:
@@ -27,7 +32,7 @@ jobs:
       uses: sandersaares-actions/make-nuget-version-string@main
       with:
         versionstring: ${{ steps.make_version_string.outputs.versionstring }}
-        releaseType: cb
+        releaseType: ${{ github.event.inputs.release_type }}
     - uses: sandersaares-actions/expand-tokens@master
       env:
         VERSIONSTRING: ${{ steps.make_nuget_version_string.outputs.nugetVersionstring }}
