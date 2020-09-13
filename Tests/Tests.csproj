@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netcoreapp3.1</TargetFramework>
+
+		<IsPackable>false</IsPackable>
+
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+		<Nullable>enable</Nullable>
+		<CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+		<LangVersion>latest</LangVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="TestData\CrashingTool\crypt.xml" />
+	  <None Remove="TestData\CrashingTool\js.dll" />
+	  <None Remove="TestData\CrashingTool\libgpac.dll" />
+	  <None Remove="TestData\CrashingTool\mp4box.exe" />
+	  <None Remove="TestData\CrashingTool\ssleay32.dll" />
+	  <None Remove="TestData\CrashingTool\z.mp4" />
+	  <None Remove="TestData\Echo\Mono.Options.dll" />
+	  <None Remove="TestData\Echo\Tests.Echo.deps.json" />
+	  <None Remove="TestData\Echo\Tests.Echo.dll" />
+	  <None Remove="TestData\Echo\Tests.Echo.exe" />
+	  <None Remove="TestData\Echo\Tests.Echo.pdb" />
+	  <None Remove="TestData\Echo\Tests.Echo.runtimeconfig.dev.json" />
+	  <None Remove="TestData\Echo\Tests.Echo.runtimeconfig.json" />
+	  <None Remove="TestData\Gangster.xml" />
+	  <None Remove="TestData\MediaInfo.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="TestData\CrashingTool\crypt.xml" />
+	  <EmbeddedResource Include="TestData\CrashingTool\js.dll" />
+	  <EmbeddedResource Include="TestData\CrashingTool\libgpac.dll" />
+	  <EmbeddedResource Include="TestData\CrashingTool\mp4box.exe" />
+	  <EmbeddedResource Include="TestData\CrashingTool\ssleay32.dll" />
+	  <EmbeddedResource Include="TestData\CrashingTool\z.mp4" />
+	  <EmbeddedResource Include="TestData\Echo\Mono.Options.dll" />
+	  <EmbeddedResource Include="TestData\Echo\Tests.Echo.deps.json" />
+	  <EmbeddedResource Include="TestData\Echo\Tests.Echo.dll" />
+	  <EmbeddedResource Include="TestData\Echo\Tests.Echo.exe" />
+	  <EmbeddedResource Include="TestData\Echo\Tests.Echo.pdb" />
+	  <EmbeddedResource Include="TestData\Echo\Tests.Echo.runtimeconfig.dev.json" />
+	  <EmbeddedResource Include="TestData\Echo\Tests.Echo.runtimeconfig.json" />
+	  <EmbeddedResource Include="TestData\Gangster.xml" />
+	  <EmbeddedResource Include="TestData\MediaInfo.dll" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="2.1.0" />
+		<PackageReference Include="MSTest.TestFramework" Version="2.1.0" />
+		<PackageReference Include="coverlet.collector" Version="1.2.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Koek.NetStandard\Koek.NetStandard.csproj" />
+		<ProjectReference Include="..\Koek\Koek.csproj" />
+	</ItemGroup>
+
+</Project>
