@@ -4,7 +4,7 @@
     <id>Koek</id>
 
     <!-- Automatically set by release process. -->
-    <version>__NUGETPACKAGEVERSION__</version>
+    <version>__VERSIONSTRING__</version>
 
     <authors>sandersaares</authors>
     <description>A pile of useful .NET Core and .NET Standard code.</description>
