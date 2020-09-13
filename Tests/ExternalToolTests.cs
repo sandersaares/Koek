@@ -301,7 +301,11 @@ namespace Tests
 
         private static EmbeddedPackage GetEchoPackage()
         {
-            return new EmbeddedPackage(Assembly.GetExecutingAssembly(), "Tests.TestData.Echo", "Mono.Options.dll", "Tests.Echo.dll", "Tests.Echo.exe", "Tests.Echo.pdb", "Tests.Echo.deps.json", "Tests.Echo.runtimeconfig.json", "Tests.Echo.runtimeconfig.dev.json");
+            var echoPackage = new EmbeddedPackage(Assembly.GetExecutingAssembly(), "Tests.TestData.Echo", "Mono.Options.dll", "Tests.Echo.dll", "Tests.Echo.exe", "Tests.Echo.pdb", "Tests.Echo.deps.json", "Tests.Echo.runtimeconfig.json", "Tests.Echo.runtimeconfig.dev.json");
+
+            Helpers.Filesystem.EnsureExecutePermission(Path.Combine(echoPackage.Path, "Tests.Echo.exe"));
+
+            return echoPackage;
         }
 
         [TestMethod]
