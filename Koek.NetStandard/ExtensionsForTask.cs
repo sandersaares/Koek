@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,24 +17,54 @@ namespace Koek
 
         /// <summary>
         /// Logs any exceptions from the task to the trace log of the provided type.
+        /// After logging, the exception is wrapped in an AggregateException and re-thrown.
         /// </summary>
-        public static Task LogExceptions<TTrace>(this Task task) => task.ContinueWith(t =>
+        public static Task LogExceptionsAndRethrow<TTrace>(this Task task) => task.ContinueWith(t =>
         {
-            if (t.Exception != null)
-                Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            if (t.Exception == null)
+                return Task.CompletedTask;
 
+            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            throw new AggregateException(t.Exception);
+        });
+
+        /// <summary>
+        /// Logs any exceptions from the task to the trace log of the provided type.
+        /// After logging, the exception is wrapped in an AggregateException and re-thrown.
+        /// </summary>
+        public static Task<TResult> LogExceptionsAndRethrow<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
+        {
+            if (t.Exception == null)
+                return t.Result;
+
+            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            throw new AggregateException(t.Exception);
+        });
+
+        /// <summary>
+        /// Logs any exceptions from the task to the trace log of the provided type.
+        /// Beyond logging, exceptions are ignored.
+        /// </summary>
+        public static Task LogExceptionsAndIgnore<TTrace>(this Task task) => task.ContinueWith(t =>
+        {
+            if (t.Exception == null)
+                return Task.CompletedTask;
+
+            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
             return Task.CompletedTask;
         });
 
         /// <summary>
         /// Logs any exceptions from the task to the trace log of the provided type.
+        /// If an exception occurs, returns the default value of the result type.
         /// </summary>
-        public static Task<TResult> LogExceptions<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
+        public static Task<TResult> LogExceptionsAndReturnDefault<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
         {
-            if (t.Exception != null)
-                Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            if (t.Exception == null)
+                return t.Result;
 
-            return t.Result;
+            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            return default;
         });
 
         /// <summary>
