@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -53,12 +55,14 @@ namespace Koek
         /// <summary>
         /// Allows a custom action to consume data from the standard output stream.
         /// The action is executed on a dedicated thread.
+        /// If set, standard output stream is not captured to string and not visible in the tool results.
         /// </summary>
         public Action<Stream>? StandardOutputConsumer { get; set; }
 
         /// <summary>
         /// Allows a custom action to consume data from the standard error stream.
         /// The action is executed on a dedicated thread.
+        /// If set, standard error stream is not captured to string and not visible in the tool results.
         /// </summary>
         public Action<Stream>? StandardErrorConsumer { get; set; }
 
@@ -75,14 +79,23 @@ namespace Koek
         public IReadOnlyCollection<string>? CensoredStrings { get; set; }
 
         /// <summary>
+        /// Sets the process priority class to use for the started tool.
+        /// </summary>
+        public ProcessPriorityClass ProcessPriority { get; set; } = ProcessPriorityClass.BelowNormal;
+
+        /// <summary>
+        /// Whether to capture the stdout/stderr to strings. Set this to false if you expect the streams to grow excessively large of if the data is expected to be non-text.
+        /// This only has any effect when you are not setting custom standard stream consumers - those override the string capture no matter what.
+        /// </summary>
+        public bool CaptureOutputStreamsToString { get; set; } = true;
+
+        /// <summary>
         /// Starts a new instance of the external tool. Use this if you want more detailed control over the process
         /// e.g. the ability to terminate it or to inspect the running process. Otherwise, just use the synchronous Execute().
         /// </summary>
         public Instance Start()
         {
-            var instance = new Instance(this);
-            instance.Start();
-            return instance;
+            return new Instance(this);
         }
 
         /// <summary>
@@ -154,15 +167,20 @@ namespace Koek
         /// </summary>
         public sealed class Instance
         {
-            public Process? Process { get; private set; }
+            public Process Process { get; }
 
-            public string ExecutablePath { get; private set; }
-            public string ExecutableShortName { get; private set; }
-            public string? Arguments { get; private set; }
-            public string? CensoredArguments { get; private set; }
-            public IReadOnlyDictionary<string, string>? EnvironmentVariables { get; private set; }
-            public string? WorkingDirectory { get; private set; }
-            public string? OutputFilePath { get; private set; }
+            public string ExecutablePath { get; }
+            public string Arguments { get; }
+            public string CensoredArguments { get; }
+            public IReadOnlyDictionary<string, string> EnvironmentVariables { get; }
+            public string WorkingDirectory { get; }
+            public string? OutputFilePath { get; }
+            public ProcessPriorityClass ProcessPriority { get; }
+            public bool CaptureOutputStreamsToString { get; }
+
+            internal TraceWriter Trace { get; }
+
+            private string _shortName;
 
             /// <summary>
             /// Waits for the tool to exit and retrieves the result.
@@ -171,12 +189,9 @@ namespace Koek
             /// <exception cref="TimeoutException">Thrown if a timeout occurs.</exception>
             public ExternalToolResult GetResult(TimeSpan timeout)
             {
-                if (Process == null)
-                    throw new InvalidOperationException("The process has not been started - cannot get result.");
-
                 if (!_result.Task.Wait(timeout))
                 {
-                    Helpers.Trace<ExternalTool>.Verbose($"Terminating {ExecutableShortName} due to timeout.");
+                    Trace.Verbose($"Terminating due to timeout.");
 
                     Process.Kill();
 
@@ -196,16 +211,13 @@ namespace Koek
 			/// </summary>
             public async Task<ExternalToolResult> GetResultAsync(CancellationToken cancel = default)
             {
-                if (Process == null)
-                    throw new InvalidOperationException("The process has not been started - cannot get result.");
-
                 try
                 {
                     return await _result.Task.WithAbandonment(cancel);
                 }
                 catch (TaskCanceledException)
                 {
-                    Helpers.Trace<ExternalTool>.Verbose($"Terminating {ExecutableShortName} due to cancellation.");
+                    Trace.Verbose($"Terminating due to cancellation.");
 
                     // If a cancellation is signaled, we need to kill the process and set error to really time it out.
                     Process.Kill();
@@ -246,24 +258,28 @@ namespace Koek
                 if (template.WorkingDirectory != null && !Directory.Exists(template.WorkingDirectory))
                     throw new ArgumentException("The working directory does not exist.", nameof(template));
 
+                _shortName = Path.GetFileName(template.ExecutablePath);
+                Trace = TraceWriter.ForTypeAndSubcategory<ExternalTool>(_shortName);
+
                 var executablePath = template.ExecutablePath;
 
                 // First, resolve the path.
                 if (!Path.IsPathRooted(executablePath))
                 {
                     var resolvedPath = Helpers.Filesystem.ResolvePath(executablePath);
-                    Trace.WriteLine($"{executablePath} resolved to {resolvedPath}", nameof(ExternalTool));
+                    Trace.Verbose($"{executablePath} resolved to {resolvedPath}");
 
                     executablePath = resolvedPath;
                 }
 
                 // Then prepare the variables.
                 ExecutablePath = executablePath;
-                ExecutableShortName = Path.GetFileName(ExecutablePath);
                 Arguments = template.Arguments ?? "";
                 EnvironmentVariables = new Dictionary<string, string>(template.EnvironmentVariables ?? new Dictionary<string, string>());
                 WorkingDirectory = template.WorkingDirectory ?? Environment.CurrentDirectory;
                 OutputFilePath = template.OutputFilePath;
+                ProcessPriority = template.ProcessPriority;
+                CaptureOutputStreamsToString = template.CaptureOutputStreamsToString;
 
                 _standardInputProvider = template.StandardInputProvider;
                 _standardOutputConsumer = template.StandardOutputConsumer;
@@ -282,6 +298,8 @@ namespace Koek
                         CensoredArguments = CensoredArguments.Replace(censoredString, "*********");
                     }
                 }
+
+                Process = Start();
             }
 
             /// <summary>
@@ -347,27 +365,15 @@ namespace Koek
                 private static readonly object _errorModeLock = new object();
             }
 
-            internal void Start()
+            internal Process Start()
             {
-                if (Process != null)
-                    throw new InvalidOperationException("The instance has already been started.");
+                Trace.Verbose($"Executing: {ExecutablePath} {CensoredArguments}");
 
-                Helpers.Trace<ExternalTool>.Verbose($"Executing: {ExecutablePath} {CensoredArguments}");
-
-                StreamWriter? outputFileWriter = null;
-
-                if (!string.IsNullOrWhiteSpace(OutputFilePath))
-                {
-                    // Make sure the file can be created - parent directory exists.
-                    var parent = Path.GetDirectoryName(OutputFilePath);
-
-                    // No need to create it if it is a relative path with no parent.
-                    if (!string.IsNullOrWhiteSpace(parent))
-                        Directory.CreateDirectory(parent);
-
-                    // Create the file.
-                    outputFileWriter = File.CreateText(OutputFilePath);
-                }
+                // We write both stderr and stdout to the output file, line by line.
+                // If you need to make a distinction, capture the streams yourself.
+                // We capture both into strings separately, though, if there is no file output.
+                StreamWriter? outputFileWriter = TryCreateOutputFileWriter();
+                var outputFileWriterLock = new object();
 
                 try
                 {
@@ -392,19 +398,16 @@ namespace Koek
                     if (_standardInputProvider != null)
                         startInfo.RedirectStandardInput = true;
 
-                    string? standardError = null;
-                    string? standardOutput = null;
-
                     var runtime = Stopwatch.StartNew();
 
-                    using (new CrashDialogSuppressionBlock())
-                        Process = Process.Start(startInfo);
+                    Process process;
 
-                    // We default all external tools to below normal because they are, as a rule, less
-                    // important than fast responsive UX, so the system should not be bogged down by them.
+                    using (new CrashDialogSuppressionBlock())
+                        process = Process.Start(startInfo);
+
                     try
                     {
-                        Process.PriorityClass = ProcessPriorityClass.BelowNormal;
+                        process.PriorityClass = ProcessPriority;
                     }
                     catch (InvalidOperationException)
                     {
@@ -419,19 +422,38 @@ namespace Koek
                     Thread? standardErrorReader = null;
                     Thread? standardOutputReader = null;
 
+                    var standardOutput = new StringBuilder();
+                    var standardError = new StringBuilder();
+
                     if (_standardErrorConsumer != null)
                     {
                         // Caller wants to have it. Okay, fine.
-                        Helpers.Async.BackgroundThreadInvoke(delegate { _standardErrorConsumer(Process.StandardError.BaseStream); });
+                        Helpers.Async.BackgroundThreadInvoke(delegate { _standardErrorConsumer(process.StandardError.BaseStream); });
                     }
                     else
                     {
                         // We'll store it ourselves.
                         standardErrorReader = new Thread((ThreadStart)delegate
                         {
-                            // This should be safe if the process we are starting is well-behaved (i.e. not ADB).
-                            standardError = Process.StandardError.ReadToEnd();
-                        });
+                            while (true)
+                            {
+                                var line = process.StandardError.ReadLine();
+
+                                if (line == null)
+                                    return; // End of stream.
+
+                                if (CaptureOutputStreamsToString)
+                                    standardError.AppendLine(line);
+
+                                lock (outputFileWriterLock)
+                                    if (outputFileWriter != null)
+                                        outputFileWriter.WriteLine(line);
+                            }
+                        })
+                        {
+                            Name = $"{_shortName} stderr reader",
+                            IsBackground = true
+                        };
 
                         standardErrorReader.Start();
                     }
@@ -439,20 +461,35 @@ namespace Koek
                     if (_standardOutputConsumer != null)
                     {
                         // Caller wants to have it. Okay, fine. We do not need to track this thread.
-                        Helpers.Async.BackgroundThreadInvoke(delegate { _standardOutputConsumer(Process.StandardOutput.BaseStream); });
+                        Helpers.Async.BackgroundThreadInvoke(delegate { _standardOutputConsumer(process.StandardOutput.BaseStream); });
                     }
                     else
                     {
                         // We'll store it ourselves.
                         standardOutputReader = new Thread((ThreadStart)delegate
                         {
-                            // This should be safe if the process we are starting is well-behaved (i.e. not ADB).
-                            standardOutput = Process.StandardOutput.ReadToEnd();
-                        });
+                            while (true)
+                            {
+                                var line = process.StandardOutput.ReadLine();
+
+                                if (line == null)
+                                    return; // End of stream.
+
+                                if (CaptureOutputStreamsToString)
+                                    standardOutput.AppendLine(line);
+
+                                lock (outputFileWriterLock)
+                                    if (outputFileWriter != null)
+                                        outputFileWriter.WriteLine(line);
+                            }
+                        })
+                        {
+                            Name = $"{_shortName} stdout reader",
+                            IsBackground = true
+                        };
 
                         standardOutputReader.Start();
                     }
-
 
                     if (_standardInputProvider != null)
                     {
@@ -460,14 +497,14 @@ namespace Koek
                         Helpers.Async.BackgroundThreadInvoke(delegate
                         {
                             // Closing stdin after providing input is critical or the app may just hang forever.
-                            using (var stdin = Process.StandardInput.BaseStream)
+                            using (var stdin = process.StandardInput.BaseStream)
                                 _standardInputProvider(stdin);
                         });
                     }
 
                     var resultThread = new Thread((ThreadStart)delegate
                     {
-                        Process.WaitForExit();
+                        process.WaitForExit();
                         runtime.Stop();
 
                         // NB! Streams may stay open and blocked after process exits.
@@ -476,22 +513,17 @@ namespace Koek
                         standardErrorReader?.Join();
                         standardOutputReader?.Join();
 
-                        if (outputFileWriter != null)
-                        {
-                            if (standardOutput != null)
-                                outputFileWriter.WriteLine(standardOutput);
+                        lock (outputFileWriterLock)
+                            if (outputFileWriter != null)
+                                outputFileWriter.Dispose();
 
-                            if (standardError != null)
-                                outputFileWriter.WriteLine(standardError);
-
-                            outputFileWriter.Dispose();
-                        }
-
-                        _result.TrySetResult(new ExternalToolResult(this, standardOutput ?? "", standardError ?? "", Process.ExitCode, runtime.Elapsed));
+                        _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), process.ExitCode, runtime.Elapsed));
                     });
 
                     // All the rest happens in the result thread, which waits for the process to exit.
                     resultThread.Start();
+
+                    return process;
                 }
                 catch (Exception)
                 {
@@ -500,6 +532,22 @@ namespace Koek
 
                     throw;
                 }
+            }
+
+            private StreamWriter? TryCreateOutputFileWriter()
+            {
+                if (string.IsNullOrWhiteSpace(OutputFilePath))
+                    return null;
+
+                // Make sure the file can be created - parent directory exists.
+                var parent = Path.GetDirectoryName(OutputFilePath);
+
+                // No need to create it if it is a relative path with no parent.
+                if (!string.IsNullOrWhiteSpace(parent))
+                    Directory.CreateDirectory(parent);
+
+                // Create the file.
+                return File.CreateText(OutputFilePath);
             }
         }
     }

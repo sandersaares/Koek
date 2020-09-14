@@ -307,7 +307,8 @@ namespace Tests
         [TestMethod]
         public void ExternalTool_WithCustomInputProvider_UsesCustomInput_WindowsOnly()
         {
-            var canary = Encoding.UTF8.GetBytes("sat9pyba8m5yiae5 hya");
+            // The stdout/stderr default reading is performed line-by-line, so match the line-based logic by always ending the canary with a newline.
+            var canary = Encoding.UTF8.GetBytes("sat9pyba8m5yiae5 hya" + Environment.NewLine);
 
             using (var package = GetEchoPackage())
             {
@@ -329,7 +330,8 @@ namespace Tests
         [TestMethod]
         public void ExternalTool_WithCustomInputProviderUsingSmallBlockSize_UsesCustomInput_WindowsOnly()
         {
-            var canary = Encoding.UTF8.GetBytes("sat9pyba8m5yiae5 hya");
+            // The stdout/stderr default reading is performed line-by-line, so match the line-based logic by always ending the canary with a newline.
+            var canary = Encoding.UTF8.GetBytes("sat9pyba8m5yiae5 hya" + Environment.NewLine);
 
             using (var package = GetEchoPackage())
             {

@@ -25,10 +25,10 @@ namespace Koek
         public void ForwardOutputs()
         {
             if (!string.IsNullOrWhiteSpace(StandardOutput))
-                Helpers.Trace<ExternalTool>.Verbose($"{Instance.ExecutableShortName} standard output stream contents: " + StandardOutput);
+                Instance.Trace.Verbose($"Captured standard output stream: " + StandardOutput);
 
             if (!string.IsNullOrWhiteSpace(StandardError))
-                Helpers.Trace<ExternalTool>.Verbose($"{Instance.ExecutableShortName} standard error stream contents: " + StandardError);
+                Instance.Trace.Verbose($"Captured standard error stream: " + StandardError);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Koek
             ForwardOutputs();
             VerifySuccess();
 
-            Helpers.Trace<ExternalTool>.Verbose($"{Instance.ExecutableShortName} finished in {Duration.TotalSeconds:F2}s.");
+            Instance.Trace.Verbose($"Finished in {Duration.TotalSeconds:F2}s.");
         }
 
         /// <summary>
