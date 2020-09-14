@@ -167,8 +167,6 @@ namespace Koek
         /// </summary>
         public sealed class Instance
         {
-            public Process Process { get; }
-
             public string ExecutablePath { get; }
             public string Arguments { get; }
             public string CensoredArguments { get; }
@@ -180,6 +178,7 @@ namespace Koek
 
             internal TraceWriter Trace { get; }
 
+            private Process _process;
             private string _shortName;
 
             /// <summary>
@@ -193,7 +192,7 @@ namespace Koek
                 {
                     Trace.Verbose($"Terminating due to timeout.");
 
-                    Process.Kill();
+                    _process.Kill();
 
                     // Wait for result to be available so that all the output gets written to file.
                     // This may not work if something is very wrong, but we do what we can to help.
@@ -220,7 +219,7 @@ namespace Koek
                     Trace.Verbose($"Terminating due to cancellation.");
 
                     // If a cancellation is signaled, we need to kill the process and set error to really time it out.
-                    Process.Kill();
+                    _process.Kill();
 
                     // Wait for result to be available so that all the output gets written to file.
                     // This may not work if something is very wrong, but we do what we can to help.
@@ -299,7 +298,7 @@ namespace Koek
                     }
                 }
 
-                Process = Start();
+                _process = Start();
             }
 
             /// <summary>
@@ -505,6 +504,8 @@ namespace Koek
                     var resultThread = new Thread((ThreadStart)delegate
                     {
                         process.WaitForExit();
+
+                        var exitCode = process.ExitCode;
                         runtime.Stop();
 
                         // NB! Streams may stay open and blocked after process exits.
@@ -517,7 +518,9 @@ namespace Koek
                             if (outputFileWriter != null)
                                 outputFileWriter.Dispose();
 
-                        _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), process.ExitCode, runtime.Elapsed));
+                        process.Dispose();
+
+                        _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), exitCode, runtime.Elapsed));
                     });
 
                     // All the rest happens in the result thread, which waits for the process to exit.
