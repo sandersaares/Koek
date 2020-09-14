@@ -70,7 +70,7 @@ namespace Koek
 			return FromUrl(url.ToString());
 		}
 
-		private readonly Dictionary<string, string> _args = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		private readonly Dictionary<string, string?> _args = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
 
 		/// <summary>
 		/// Initializes an empty QueryString instance without any defined query string parameters.
@@ -98,30 +98,30 @@ namespace Koek
 				string[] pair = arg.Split(new[] { '=' }, 2);
 
 				string name = WebUtility.UrlDecode(pair[0]);
-				string val = pair.Length == 2 ? WebUtility.UrlDecode(pair[1]) : null;
+				string? val = pair.Length == 2 ? WebUtility.UrlDecode(pair[1]) : null;
 
 				_args[name] = val;
 			}
 		}
 
-		public string Get(string key)
+		public string? Get(string key)
 		{
 			if (key == null)
 				throw new ArgumentNullException("key");
 
 			if (_args.ContainsKey(key))
-				return (string)_args[key];
+				return _args[key];
 			else
 				throw new ArgumentException("QueryString does not contain entry with the specified key.", "key");
 		}
 
-		public string TryGet(string key, string defaultValue)
+		public string? TryGet(string key, string? defaultValue)
 		{
 			if (key == null)
 				throw new ArgumentNullException("key");
 
 			if (_args.ContainsKey(key))
-				return (string)_args[key];
+				return _args[key];
 			else
 				return defaultValue;
 		}
@@ -134,7 +134,7 @@ namespace Koek
 			return _args.ContainsKey(key);
 		}
 
-		public void Set(string key, string value)
+		public void Set(string key, string? value)
 		{
 			if (key == null)
 				throw new ArgumentNullException("key");
@@ -150,7 +150,7 @@ namespace Koek
 			_args.Remove(key);
 		}
 
-		public string this[string key]
+		public string? this[string key]
 		{
 			get
 			{
@@ -176,7 +176,7 @@ namespace Koek
 			StringBuilder builder = new StringBuilder("?");
 			bool isFirst = true;
 
-			foreach (KeyValuePair<string, string> entry in _args)
+			foreach (KeyValuePair<string, string?> entry in _args)
 			{
 				if (!isFirst)
 					builder.Append("&");

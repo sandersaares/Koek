@@ -17,7 +17,7 @@ namespace Koek
 
         public static TraceWriter ForType<T>()
         {
-            return new TraceWriter(typeof(T).FullName);
+            return new TraceWriter(typeof(T).FullName!);
         }
 
         public static TraceWriter ForTypeAndSubcategory<T>(string subcategory)

@@ -28,51 +28,51 @@ namespace Koek
         /// Absolute or relative path to the executable. Relative paths are resolved mostly
         /// according to OS principles (PATH environment variable and potentially some others).
         /// </summary>
-        public string ExecutablePath { get; set; }
+        public string? ExecutablePath { get; set; }
 
         /// <summary>
         /// Arguments string to provide to the executable.
         /// </summary>
-        public string Arguments { get; set; }
+        public string? Arguments { get; set; }
 
         /// <summary>
         /// Any environment variables to add to the normal environment variable set.
         /// </summary>
-        public Dictionary<string, string> EnvironmentVariables { get; set; }
+        public Dictionary<string, string>? EnvironmentVariables { get; set; }
 
         /// <summary>
         /// Defaults to the working directory of the current process.
         /// </summary>
-        public string WorkingDirectory { get; set; }
+        public string? WorkingDirectory { get; set; }
 
         /// <summary>
         /// Copies the standard output and standard error streams to the specified file if set.
         /// </summary>
-        public string OutputFilePath { get; set; }
+        public string? OutputFilePath { get; set; }
 
         /// <summary>
         /// Allows a custom action to consume data from the standard output stream.
         /// The action is executed on a dedicated thread.
         /// </summary>
-        public Action<Stream> StandardOutputConsumer { get; set; }
+        public Action<Stream>? StandardOutputConsumer { get; set; }
 
         /// <summary>
         /// Allows a custom action to consume data from the standard error stream.
         /// The action is executed on a dedicated thread.
         /// </summary>
-        public Action<Stream> StandardErrorConsumer { get; set; }
+        public Action<Stream>? StandardErrorConsumer { get; set; }
 
         /// <summary>
         /// Allows a custom action to provide data on the standard input stream.
         /// The action is executed on a dedicated thread.
         /// </summary>
-        public Action<Stream> StandardInputProvider { get; set; }
+        public Action<Stream>? StandardInputProvider { get; set; }
 
         /// <summary>
         /// If set, any strings in this collection are censored in log output (though not stdout/stderr).
         /// Useful if you pass credentials on the command line.
         /// </summary>
-        public IReadOnlyCollection<string> CensoredStrings { get; set; }
+        public IReadOnlyCollection<string>? CensoredStrings { get; set; }
 
         /// <summary>
         /// Starts a new instance of the external tool. Use this if you want more detailed control over the process
@@ -154,15 +154,15 @@ namespace Koek
         /// </summary>
         public sealed class Instance
         {
-            public Process Process { get; private set; }
+            public Process? Process { get; private set; }
 
             public string ExecutablePath { get; private set; }
             public string ExecutableShortName { get; private set; }
-            public string Arguments { get; private set; }
-            public string CensoredArguments { get; private set; }
-            public IReadOnlyDictionary<string, string> EnvironmentVariables { get; private set; }
-            public string WorkingDirectory { get; private set; }
-            public string OutputFilePath { get; private set; }
+            public string? Arguments { get; private set; }
+            public string? CensoredArguments { get; private set; }
+            public IReadOnlyDictionary<string, string>? EnvironmentVariables { get; private set; }
+            public string? WorkingDirectory { get; private set; }
+            public string? OutputFilePath { get; private set; }
 
             /// <summary>
             /// Waits for the tool to exit and retrieves the result.
@@ -171,6 +171,9 @@ namespace Koek
             /// <exception cref="TimeoutException">Thrown if a timeout occurs.</exception>
             public ExternalToolResult GetResult(TimeSpan timeout)
             {
+                if (Process == null)
+                    throw new InvalidOperationException("The process has not been started - cannot get result.");
+
                 if (!_result.Task.Wait(timeout))
                 {
                     Helpers.Trace<ExternalTool>.Verbose($"Terminating {ExecutableShortName} due to timeout.");
@@ -193,6 +196,9 @@ namespace Koek
 			/// </summary>
             public async Task<ExternalToolResult> GetResultAsync(CancellationToken cancel = default)
             {
+                if (Process == null)
+                    throw new InvalidOperationException("The process has not been started - cannot get result.");
+
                 try
                 {
                     return await _result.Task.WithAbandonment(cancel);
@@ -221,9 +227,9 @@ namespace Koek
                 }
             }
 
-            private Action<Stream> _standardOutputConsumer;
-            private Action<Stream> _standardInputProvider;
-            private Action<Stream> _standardErrorConsumer;
+            private Action<Stream>? _standardOutputConsumer;
+            private Action<Stream>? _standardInputProvider;
+            private Action<Stream>? _standardErrorConsumer;
 
             private readonly TaskCompletionSource<ExternalToolResult> _result = new TaskCompletionSource<ExternalToolResult>();
 
@@ -348,7 +354,7 @@ namespace Koek
 
                 Helpers.Trace<ExternalTool>.Verbose($"Executing: {ExecutablePath} {CensoredArguments}");
 
-                StreamWriter outputFileWriter = null;
+                StreamWriter? outputFileWriter = null;
 
                 if (!string.IsNullOrWhiteSpace(OutputFilePath))
                 {
@@ -386,8 +392,8 @@ namespace Koek
                     if (_standardInputProvider != null)
                         startInfo.RedirectStandardInput = true;
 
-                    string standardError = null;
-                    string standardOutput = null;
+                    string? standardError = null;
+                    string? standardOutput = null;
 
                     var runtime = Stopwatch.StartNew();
 
@@ -410,8 +416,8 @@ namespace Koek
                     }
 
                     // These are only set if they are created by ExternalTool - we don't care about user threads.
-                    Thread standardErrorReader = null;
-                    Thread standardOutputReader = null;
+                    Thread? standardErrorReader = null;
+                    Thread? standardOutputReader = null;
 
                     if (_standardErrorConsumer != null)
                     {
@@ -481,7 +487,7 @@ namespace Koek
                             outputFileWriter.Dispose();
                         }
 
-                        _result.TrySetResult(new ExternalToolResult(this, standardOutput, standardError, Process.ExitCode, runtime.Elapsed));
+                        _result.TrySetResult(new ExternalToolResult(this, standardOutput ?? "", standardError ?? "", Process.ExitCode, runtime.Elapsed));
                     });
 
                     // All the rest happens in the result thread, which waits for the process to exit.

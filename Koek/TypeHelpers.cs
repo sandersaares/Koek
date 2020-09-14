@@ -19,7 +19,7 @@ namespace Koek
         /// <remarks>
         /// Obviously, you're in trouble if you have multiple assemblies that both contain a type with the same name.
         /// </remarks>
-        public static Type GetTypeFromAnyAssembly(this HelpersContainerClasses.Type container, string typeName)
+        public static Type? GetTypeFromAnyAssembly(this HelpersContainerClasses.Type container, string typeName)
         {
             return Helpers.Type.GetTypeFromAnyAssembly(typeName, false);
         }
@@ -38,7 +38,7 @@ namespace Koek
         /// <remarks>
         /// Obviously, you're in trouble if you have multiple assemblies that both contain a type with the same name.
         /// </remarks>
-        public static Type GetTypeFromAnyAssembly(this HelpersContainerClasses.Type container, string typeName, bool throwOnError)
+        public static Type? GetTypeFromAnyAssembly(this HelpersContainerClasses.Type container, string typeName, bool throwOnError)
         {
             if (typeName == null)
                 throw new ArgumentNullException("typeName");
@@ -124,7 +124,7 @@ namespace Koek
         /// * is not abstract;
         /// * has at least one public constructor (does not need to be parameterless).
         /// </remarks>
-        public static bool IsPotentiallyConstructibleType(this HelpersContainerClasses.Type container, string typeName, Type requiredAspect)
+        public static bool IsPotentiallyConstructibleType(this HelpersContainerClasses.Type container, string typeName, Type? requiredAspect)
         {
             if (string.IsNullOrEmpty(typeName))
             {
@@ -170,7 +170,7 @@ namespace Koek
             return HasAspect(type, requiredAspect);
         }
 
-        private static bool HasAspect(Type type, Type requiredAspect)
+        private static bool HasAspect(Type type, Type? requiredAspect)
         {
             if (requiredAspect == null)
                 return true;

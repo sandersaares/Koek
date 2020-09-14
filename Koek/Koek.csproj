@@ -8,8 +8,4 @@
 		<LangVersion>latest</LangVersion>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\Koek.NetStandard\Koek.NetStandard.csproj" />
-	</ItemGroup>
 </Project>

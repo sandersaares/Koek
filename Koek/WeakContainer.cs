@@ -72,7 +72,7 @@ namespace Koek
 
             foreach (var wr in _items)
             {
-                T target = (T)wr.Target;
+                var target = (T?)wr.Target;
 
                 if (target == item)
                 {
@@ -95,7 +95,7 @@ namespace Koek
 
             foreach (var wr in _items)
             {
-                T target = (T)wr.Target;
+                var target = (T?)wr.Target;
 
                 if (target == item)
                 {
@@ -134,7 +134,7 @@ namespace Koek
         {
             foreach (var wr in _items)
             {
-                T target = (T)wr.Target;
+                var target = (T?)wr.Target;
 
                 if (target == null)
                     continue;
@@ -153,7 +153,7 @@ namespace Koek
         {
             foreach (var wr in _items)
             {
-                T target = (T)wr.Target;
+                var target = (T?)wr.Target;
 
                 if (target == null)
                     continue;

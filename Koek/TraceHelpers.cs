@@ -11,7 +11,7 @@ namespace Koek
         /// </summary>
         public static class Trace<T>
         {
-            private static readonly string TypeFullName = typeof(T).FullName;
+            private static readonly string TypeFullName = typeof(T).FullName!;
             private static TraceSwitch Switch => new TraceSwitch(TypeFullName, "");
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

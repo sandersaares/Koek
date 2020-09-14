@@ -46,7 +46,7 @@ namespace Koek
             return new SemaphoreLock(semaphore);
         }
 
-        public static SemaphoreLock TryTake(SemaphoreSlim semaphore, TimeSpan timeout)
+        public static SemaphoreLock? TryTake(SemaphoreSlim semaphore, TimeSpan timeout)
         {
             Helpers.Argument.ValidateIsNotNull(semaphore, nameof(semaphore));
 
@@ -56,7 +56,7 @@ namespace Koek
                 return null;
         }
 
-        public static async Task<SemaphoreLock> TryTakeAsync(SemaphoreSlim semaphore, TimeSpan timeout)
+        public static async Task<SemaphoreLock?> TryTakeAsync(SemaphoreSlim semaphore, TimeSpan timeout)
         {
             Helpers.Argument.ValidateIsNotNull(semaphore, nameof(semaphore));
 

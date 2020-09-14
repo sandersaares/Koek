@@ -13,7 +13,7 @@ namespace Koek
         /// <summary>
         /// Gets the path to the directory that contains the package.
         /// </summary>
-        public string Path => _directory?.Path;
+        public string Path => _directory.Path;
 
         /// <summary>
         /// Extracts an embedded package from the specified assembly and enables its contents to be accessed.
@@ -32,7 +32,7 @@ namespace Koek
         /// <param name="namespace">The namespace of the files contained within the package (e.g. My.Stuff.Package1).</param>
         /// <param name="filenames">The names of the files to extract.</param>
         /// <param name="storageDirectory">Where to store the extracted files.</param>
-        public EmbeddedPackage(Assembly assembly, string @namespace, TemporaryDirectory storageDirectory, params string[] filenames)
+        public EmbeddedPackage(Assembly assembly, string @namespace, TemporaryDirectory? storageDirectory, params string[] filenames)
         {
             Helpers.Argument.ValidateIsNotNull(assembly, nameof(assembly));
             Helpers.Argument.ValidateIsNotNullOrWhitespace(@namespace, nameof(@namespace));
@@ -41,8 +41,7 @@ namespace Koek
             if (filenames.Length == 0)
                 throw new ArgumentException("No filenames specified.", nameof(filenames));
 
-            if (storageDirectory == null)
-                storageDirectory = new TemporaryDirectory();
+            storageDirectory ??= new TemporaryDirectory();
 
             _directory = storageDirectory;
 
@@ -75,8 +74,6 @@ namespace Koek
             if (_directory != null)
             {
                 _directory.Delete();
-                _directory = null;
-
                 GC.SuppressFinalize(this);
             }
         }

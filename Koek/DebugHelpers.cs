@@ -21,7 +21,7 @@ namespace Koek
 
             // We filter out system assemblies because they are boring.
             foreach (var assemblyName in loadedAssemblyNames
-                .Where(a => !a.Name.StartsWith("System."))
+                .Where(a => !a.Name!.StartsWith("System."))
                 .OrderBy(a => a.Name))
             {
                 sb.AppendLine($"{assemblyName.Name} {assemblyName.Version}");
@@ -48,7 +48,7 @@ namespace Koek
                 {
                     if (aex.InnerExceptions.Count == 1)
                     {
-                        AppendException(aex.InnerException);
+                        AppendException(aex.InnerException!);
                         return;
                     }
 
@@ -156,7 +156,7 @@ namespace Koek
             typeof(Enum).GetTypeInfo()
         };
 
-        private static void CreateDebugString(object o, StringBuilder s, int depth, IList<object> visitedObjects, int? firstLineDepth = null)
+        private static void CreateDebugString(object? o, StringBuilder s, int depth, IList<object> visitedObjects, int? firstLineDepth = null)
         {
             // For some calls, we explicitly want to allow the first line not to have indent, so it can just continue
             // off the previous line without a line break. To do that, set firstLineDepth = 0.
@@ -310,7 +310,7 @@ namespace Koek
                 int i = 0;
                 bool needsNewline = false;
 
-                foreach (object item in (IEnumerable)o)
+                foreach (object? item in (IEnumerable)o)
                 {
                     var itemTypeInfo = item == null ? typeof(object).GetTypeInfo() : item.GetType().GetTypeInfo();
 
@@ -406,22 +406,22 @@ namespace Koek
             // All properties. Static before instance. Public only.
             foreach (var property in t.GetRuntimeProperties()
                 .Where(pp => pp.GetMethod != null && pp.GetMethod.IsPublic)
-                .Where(pp => pp.GetMethod.GetParameters().Length == 0)
-                .OrderBy(pp => pp.GetMethod.IsStatic ? 0 : 1)
+                .Where(pp => pp.GetMethod!.GetParameters().Length == 0)
+                .OrderBy(pp => pp.GetMethod!.IsStatic ? 0 : 1)
                 .ThenBy(pp => pp.Name)
                 .Select(pp => new
                 {
                     property = pp,
-                    getter = pp.GetMethod
+                    getter = pp.GetMethod!
                 }))
             {
-                object val = null;
+                object? val = null;
                 string valAsString;
 
                 try
                 {
                     val = property.getter.Invoke(o, null);
-                    valAsString = val == null ? "null" : val.ToString();
+                    valAsString = val == null ? "null" : val.ToString()!;
                 }
                 catch (Exception ex)
                 {
@@ -472,13 +472,13 @@ namespace Koek
                 .OrderBy(ff => ff.IsStatic ? 0 : 1)
                 .ThenBy(ff => ff.Name))
             {
-                object val = null;
+                object? val = null;
                 string valAsString;
 
                 try
                 {
                     val = field.GetValue(o);
-                    valAsString = val == null ? "null" : val.ToString();
+                    valAsString = val == null ? "null" : val.ToString()!;
                 }
                 catch (Exception ex)
                 {
@@ -534,7 +534,7 @@ namespace Koek
                    && !DerivableTrivialTypes.Any(dtt => dtt.IsAssignableFrom(typeInfo));
         }
 
-        private static StringBuilder AppendFormatWithIndent(this StringBuilder sb, string indentString, int indentLevel, string format, params object[] args)
+        private static StringBuilder AppendFormatWithIndent(this StringBuilder sb, string indentString, int indentLevel, string format, params object?[] args)
         {
             for (int i = 0; i < indentLevel; i++)
                 sb.Append(indentString);
@@ -543,11 +543,11 @@ namespace Koek
         }
 
         // This is only present on .NET.
-        private static readonly Lazy<TypeInfo> _hashtableTypeInfo = new Lazy<TypeInfo>(() => TryLoadTypeInfoAndIgnoreExceptions("System.Collections.Hashtable"));
+        private static readonly Lazy<TypeInfo?> _hashtableTypeInfo = new Lazy<TypeInfo?>(() => TryLoadTypeInfoAndIgnoreExceptions("System.Collections.Hashtable"));
         // This is only present on .NET.
-        private static readonly Lazy<TypeInfo> _nameValueCollectionTypeInfo = new Lazy<TypeInfo>(() => TryLoadTypeInfoAndIgnoreExceptions("System.Collections.Specialized.NameValueCollection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"));
+        private static readonly Lazy<TypeInfo?> _nameValueCollectionTypeInfo = new Lazy<TypeInfo?>(() => TryLoadTypeInfoAndIgnoreExceptions("System.Collections.Specialized.NameValueCollection, System, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"));
 
-        private static TypeInfo TryLoadTypeInfoAndIgnoreExceptions(string name)
+        private static TypeInfo? TryLoadTypeInfoAndIgnoreExceptions(string name)
         {
             try
             {

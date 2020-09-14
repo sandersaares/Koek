@@ -11,7 +11,7 @@ namespace Koek
         /// Decodes a base64-encoded string, given the encoding used by the encoded string in binary format (defaults to UTF-8).
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="base64"/> is null.</exception>
-        public static string Base64DecodeString(this HelpersContainerClasses.Convert container, string base64, Encoding encoding = null)
+        public static string Base64DecodeString(this HelpersContainerClasses.Convert container, string base64, Encoding? encoding = null)
         {
             Helpers.Argument.ValidateIsNotNull(base64, "base64");
 
@@ -26,7 +26,7 @@ namespace Koek
         /// Base64-encodes a string, given the encoding used by the string in binary format (defaults to UTF-8).
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="text"/> is null.</exception>
-        public static string Base64EncodeString(this HelpersContainerClasses.Convert container, string text, Encoding encoding = null)
+        public static string Base64EncodeString(this HelpersContainerClasses.Convert container, string text, Encoding? encoding = null)
         {
             Helpers.Argument.ValidateIsNotNull(text, "text");
 
@@ -41,7 +41,7 @@ namespace Koek
         /// Base32-encodes a string, given the encoding used by the string in binary format (defaults to UTF-8).
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="text"/> is null.</exception>
-        public static string Base32EncodeString(this HelpersContainerClasses.Convert container, string text, Encoding encoding = null)
+        public static string Base32EncodeString(this HelpersContainerClasses.Convert container, string text, Encoding? encoding = null)
         {
             Helpers.Argument.ValidateIsNotNull(text, "text");
 
@@ -56,7 +56,7 @@ namespace Koek
         /// Decodes a base32-encoded string, given the encoding used by the encoded string in binary format (defaults to UTF-8).
         /// </summary>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="base32"/> is null.</exception>
-        public static string Base32DecodeString(this HelpersContainerClasses.Convert container, string base32, Encoding encoding = null)
+        public static string Base32DecodeString(this HelpersContainerClasses.Convert container, string base32, Encoding? encoding = null)
         {
             Helpers.Argument.ValidateIsNotNull(base32, "base32");
 

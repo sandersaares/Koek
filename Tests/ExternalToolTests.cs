@@ -397,7 +397,9 @@ namespace Tests
 
                 Helpers.Trace<ExternalToolTests>.Verbose($"Read {readData?.Length} bytes out of expected {data.Length}.");
                 Helpers.Trace<ExternalToolTests>.Verbose($"First 64 written bytes: {Helpers.Convert.ByteArrayToHexString(data.Take(64).ToArray())}");
-                Helpers.Trace<ExternalToolTests>.Verbose($"First 64 read bytes: {Helpers.Convert.ByteArrayToHexString(readData?.Take(64).ToArray())}");
+
+                if (readData != null)
+                    Helpers.Trace<ExternalToolTests>.Verbose($"First 64 read bytes: {Helpers.Convert.ByteArrayToHexString(readData.Take(64).ToArray())}");
 
                 CollectionAssert.AreEqual(data, readData);
             }

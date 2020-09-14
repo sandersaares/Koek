@@ -11,7 +11,7 @@
             {
                 for (var j = 0; j < needle.Length; j++)
                 {
-                    if (!haystack[i + j].Equals(needle[j]))
+                    if (!object.Equals(haystack[i + j], needle[j]))
                         break;
 
                     // Last element of needle is a match - we have a positive result.

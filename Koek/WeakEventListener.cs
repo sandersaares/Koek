@@ -23,7 +23,7 @@ namespace Koek
         /// <remarks>
         /// Not safe to modify after any methods on the instance have been called.
         /// </remarks>
-        public Action<TInstance, TSource, TEventArgs> OnEventAction { get; set; }
+        public Action<TInstance, TSource, TEventArgs>? OnEventAction { get; set; }
 
         /// <summary>
         /// Gets or sets the method to call when detaching from the event.
@@ -32,7 +32,7 @@ namespace Koek
         /// <remarks>
         /// Not safe to modify after any methods on the instance have been called.
         /// </remarks>
-        public Action<WeakEventListener<TInstance, TSource, TEventArgs>> OnDetachAction { get; set; }
+        public Action<WeakEventListener<TInstance, TSource, TEventArgs>>? OnDetachAction { get; set; }
 
         /// <summary>
         /// Initializes a new instances of the WeakEventListener class.
@@ -52,7 +52,7 @@ namespace Koek
         /// <param name="eventArgs">Event arguments.</param>
         public void OnEvent(TSource source, TEventArgs eventArgs)
         {
-            TInstance target = (TInstance)_weakInstance.Target;
+            TInstance? target = (TInstance?)_weakInstance.Target;
 
             if (null != target)
             {

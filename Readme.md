@@ -1,5 +1,5 @@
 # Koek
 
-A pile of useful .NET Core and .NET Standard code.
+A pile of useful .NET code.
 
 Based on [Axinom.Toolkit](https://github.com/axinom/toolkit).

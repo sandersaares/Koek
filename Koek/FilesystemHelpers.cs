@@ -148,7 +148,7 @@ namespace Koek
             // Append a GUID. Good enough for easy uniqueness.
             var filename = Path.GetFileNameWithoutExtension(path) + "-" + Guid.NewGuid() + Path.GetExtension(path);
 
-            return Path.Combine(Path.GetDirectoryName(path), filename);
+            return Path.Combine(Path.GetDirectoryName(path)!, filename);
         }
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace Koek
 
             // Maybe some types of projects still get it wrong here but we'll see when we get to it.
 
-            return Path.GetDirectoryName(new Uri(assembly.CodeBase).LocalPath);
+            return Path.GetDirectoryName(new Uri(assembly.CodeBase!).LocalPath)!;
         }
     }
 }
