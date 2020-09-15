@@ -179,7 +179,21 @@ namespace Koek
             /// Checks whether the process is still running.
             /// If false, the process has exited and the result is available.
             /// </summary>
-            public bool IsRunning => _process.HasExited == false;
+            public bool IsRunning
+            {
+                get
+                {
+                    try
+                    {
+                        return _process.HasExited == false;
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.Error($"Unable to read process status: {ex}");
+                        return false;
+                    }
+                }
+            }
 
             internal TraceWriter Trace { get; }
 
@@ -413,6 +427,7 @@ namespace Koek
 
                     try
                     {
+                        // This opens the handle to the process and holds it for the lifetime of the Process object.
                         process.PriorityClass = ProcessPriority;
                     }
                     catch (InvalidOperationException)
