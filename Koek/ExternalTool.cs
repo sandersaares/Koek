@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection.Metadata.Ecma335;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -24,7 +23,7 @@ namespace Koek
         /// There are various operations that should complete near-instantly but for
         /// reasons of operating systems magic may hang. This timeout controls when we give up.
         /// </summary>
-        private static readonly TimeSpan LastResortTimeout = TimeSpan.FromSeconds(10);
+        private static readonly TimeSpan LastResortTimeout = TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// Absolute or relative path to the executable. Relative paths are resolved mostly
@@ -175,6 +174,12 @@ namespace Koek
             public string? OutputFilePath { get; }
             public ProcessPriorityClass ProcessPriority { get; }
             public bool CaptureOutputStreamsToString { get; }
+
+            /// <summary>
+            /// Checks whether the process is still running.
+            /// If false, the process has exited and the result is available.
+            /// </summary>
+            public bool IsRunning => !_process.HasExited;
 
             internal TraceWriter Trace { get; }
 
