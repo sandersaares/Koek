@@ -431,8 +431,24 @@ namespace Koek
 
                     if (_standardErrorConsumer != null)
                     {
-                        // Caller wants to have it. Okay, fine.
-                        Helpers.Async.BackgroundThreadInvoke(delegate { _standardErrorConsumer(process.StandardError.BaseStream); });
+                        // Caller wants to have it. Okay, fine. We do not need to track this thread, just create it.
+                        new Thread((ThreadStart)delegate
+                        {
+                            try
+                            {
+                                _standardErrorConsumer(process.StandardError.BaseStream);
+                            }
+                            catch (Exception ex)
+                            {
+                                Trace.Error($"Caller-provided stderr consumer crashed! {ex}");
+                                process.StandardError.Close();
+                                throw;
+                            }
+                        })
+                        {
+                            Name = $"{_shortName} stderr reader (custom)",
+                            IsBackground = true
+                        }.Start();
                     }
                     else
                     {
@@ -464,8 +480,24 @@ namespace Koek
 
                     if (_standardOutputConsumer != null)
                     {
-                        // Caller wants to have it. Okay, fine. We do not need to track this thread.
-                        Helpers.Async.BackgroundThreadInvoke(delegate { _standardOutputConsumer(process.StandardOutput.BaseStream); });
+                        // Caller wants to have it. Okay, fine. We do not need to track this thread, just create it.
+                        new Thread((ThreadStart)delegate
+                        {
+                            try
+                            {
+                                _standardOutputConsumer(process.StandardOutput.BaseStream);
+                            }
+                            catch (Exception ex)
+                            {
+                                Trace.Error($"Caller-provided stdout consumer crashed! {ex}");
+                                process.StandardOutput.Close();
+                                throw;
+                            }
+                        })
+                        {
+                            Name = $"{_shortName} stdout reader (custom)",
+                            IsBackground = true
+                        }.Start();
                     }
                     else
                     {
@@ -498,12 +530,24 @@ namespace Koek
                     if (_standardInputProvider != null)
                     {
                         // We don't care about monitoring this later, since ExternalTool does not need to touch stdin.
-                        Helpers.Async.BackgroundThreadInvoke(delegate
+                        new Thread((ThreadStart)delegate
                         {
-                            // Closing stdin after providing input is critical or the app may just hang forever.
-                            using (var stdin = process.StandardInput.BaseStream)
-                                _standardInputProvider(stdin);
-                        });
+                            try
+                            {
+                                // Closing stdin after providing input is critical or the app may just hang forever.
+                                using (var stdin = process.StandardInput.BaseStream)
+                                    _standardInputProvider(stdin);
+                            }
+                            catch (Exception ex)
+                            {
+                                Trace.Error($"Caller-provided stdin provider crashed! {ex}");
+                                throw;
+                            }
+                        })
+                        {
+                            Name = $"{_shortName} stdin provider",
+                            IsBackground = true
+                        }.Start();
                     }
 
                     var resultThread = new Thread((ThreadStart)delegate
@@ -526,7 +570,11 @@ namespace Koek
                         process.Dispose();
 
                         _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), exitCode, runtime.Elapsed));
-                    });
+                    })
+                    {
+                        Name = $"{_shortName} result observer",
+                        IsBackground = true
+                    };
 
                     // All the rest happens in the result thread, which waits for the process to exit.
                     resultThread.Start();
