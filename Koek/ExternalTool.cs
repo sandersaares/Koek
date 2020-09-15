@@ -179,12 +179,12 @@ namespace Koek
             /// Checks whether the process is still running.
             /// If false, the process has exited and the result is available.
             /// </summary>
-            public bool IsRunning => !_process.HasExited;
+            public bool IsRunning => _process.HasExited == false;
 
             internal TraceWriter Trace { get; }
 
-            private Process _process;
-            private string _shortName;
+            private readonly Process _process;
+            private readonly string _shortName;
 
             /// <summary>
             /// Waits for the tool to exit and retrieves the result.
@@ -404,6 +404,8 @@ namespace Koek
 
                     var runtime = Stopwatch.StartNew();
 
+                    // We do not dispose of the Process for workflow simplicity. The GC will take care of handle cleanup.
+                    // If you create 1000s of processes, maybe fix this. Otherwise, not worth the extra complexity.
                     Process process;
 
                     using (new CrashDialogSuppressionBlock())
@@ -568,8 +570,6 @@ namespace Koek
                             lock (outputFileWriterLock)
                                 if (outputFileWriter != null)
                                     outputFileWriter.Dispose();
-
-                            process.Dispose();
 
                             _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), exitCode, runtime.Elapsed));
                         }
