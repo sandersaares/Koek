@@ -425,6 +425,8 @@ namespace Koek
                     using (new CrashDialogSuppressionBlock())
                         process = Process.Start(startInfo);
 
+                    Trace.Verbose("Process started.");
+
                     try
                     {
                         // This opens the handle to the process and holds it for the lifetime of the Process object.
@@ -572,6 +574,7 @@ namespace Koek
                         try
                         {
                             process.WaitForExit();
+                            Trace.Verbose("Process exited.");
 
                             var exitCode = process.ExitCode;
                             runtime.Stop();
