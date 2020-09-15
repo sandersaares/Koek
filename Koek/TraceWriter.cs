@@ -12,7 +12,7 @@ namespace Koek
         private TraceWriter(string category)
         {
             _category = category;
-            _switch = new TraceSwitch(category, "");
+            _switch = new TraceSwitch(category, "", "Verbose");
         }
 
         public static TraceWriter ForType<T>()

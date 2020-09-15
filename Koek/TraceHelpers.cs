@@ -12,7 +12,7 @@ namespace Koek
         public static class Trace<T>
         {
             private static readonly string TypeFullName = typeof(T).FullName!;
-            private static TraceSwitch Switch => new TraceSwitch(TypeFullName, "");
+            private static TraceSwitch Switch => new TraceSwitch(TypeFullName, "", "Verbose");
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static void Verbose(string message)
