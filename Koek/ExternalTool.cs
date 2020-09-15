@@ -552,24 +552,32 @@ namespace Koek
 
                     var resultThread = new Thread((ThreadStart)delegate
                     {
-                        process.WaitForExit();
+                        try
+                        {
+                            process.WaitForExit();
 
-                        var exitCode = process.ExitCode;
-                        runtime.Stop();
+                            var exitCode = process.ExitCode;
+                            runtime.Stop();
 
-                        // NB! Streams may stay open and blocked after process exits.
-                        // This happens e.g. if you go cmd.exe -> start.exe.
-                        // Even if you kill cmd.exe, start.exe remains and keeps the pipes open.
-                        standardErrorReader?.Join();
-                        standardOutputReader?.Join();
+                            // NB! Streams may stay open and blocked after process exits.
+                            // This happens e.g. if you go cmd.exe -> start.exe.
+                            // Even if you kill cmd.exe, start.exe remains and keeps the pipes open.
+                            standardErrorReader?.Join();
+                            standardOutputReader?.Join();
 
-                        lock (outputFileWriterLock)
-                            if (outputFileWriter != null)
-                                outputFileWriter.Dispose();
+                            lock (outputFileWriterLock)
+                                if (outputFileWriter != null)
+                                    outputFileWriter.Dispose();
 
-                        process.Dispose();
+                            process.Dispose();
 
-                        _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), exitCode, runtime.Elapsed));
+                            _result.TrySetResult(new ExternalToolResult(this, standardOutput.ToString(), standardError.ToString(), exitCode, runtime.Elapsed));
+                        }
+                        catch (Exception ex)
+                        {
+                            Trace.Error($"Failed to observe results. Process may remain running unobserved. {ex}");
+                            _result.TrySetException(ex);
+                        }
                     })
                     {
                         Name = $"{_shortName} result observer",
