@@ -13,10 +13,6 @@
 		{
 		}
 
-		public sealed class Async
-		{
-		}
-
 		public sealed class Convert
 		{
 		}
