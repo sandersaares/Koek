@@ -244,8 +244,8 @@ namespace Koek
                     // This may not work if something is very wrong, but we do what we can to help.
                     try
                     {
-                        using (var lastResort = new CancellationTokenSource(LastResortTimeout))
-                            await _result.Task.WithAbandonment(lastResort.Token);
+                        using var lastResort = new CancellationTokenSource(LastResortTimeout);
+                        await _result.Task.WithAbandonment(lastResort.Token);
                     }
                     catch
                     {
@@ -257,9 +257,9 @@ namespace Koek
                 }
             }
 
-            private Action<Stream>? _standardOutputConsumer;
-            private Action<Stream>? _standardInputProvider;
-            private Action<Stream>? _standardErrorConsumer;
+            private readonly Action<Stream>? _standardOutputConsumer;
+            private readonly Action<Stream>? _standardInputProvider;
+            private readonly Action<Stream>? _standardErrorConsumer;
 
             private readonly TaskCompletionSource<ExternalToolResult> _result = new TaskCompletionSource<ExternalToolResult>();
 
@@ -423,7 +423,7 @@ namespace Koek
                     Process process;
 
                     using (new CrashDialogSuppressionBlock())
-                        process = Process.Start(startInfo);
+                        process = Process.Start(startInfo) ?? throw new ContractException("Process.Start() unexpectedly returned null.");
 
                     Trace.Verbose("Process started.");
 
@@ -554,8 +554,8 @@ namespace Koek
                             try
                             {
                                 // Closing stdin after providing input is critical or the app may just hang forever.
-                                using (var stdin = process.StandardInput.BaseStream)
-                                    _standardInputProvider(stdin);
+                                using var stdin = process.StandardInput.BaseStream;
+                                _standardInputProvider(stdin);
                             }
                             catch (Exception ex)
                             {

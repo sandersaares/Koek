@@ -33,7 +33,7 @@ namespace Koek
                     return candidate;
             }
 
-            throw new ArgumentException("Unable to resolve path to " + inputPath, "inputPath");
+            throw new ArgumentException("Unable to resolve path to " + inputPath, nameof(inputPath));
         }
 
         /// <summary>
@@ -41,7 +41,7 @@ namespace Koek
         /// </summary>
         public static void EnsureEmptyDirectory(this HelpersContainerClasses.Filesystem container, string path)
         {
-            Helpers.Argument.ValidateIsNotNullOrWhitespace(path, "path");
+            Helpers.Argument.ValidateIsNotNullOrWhitespace(path, nameof(path));
 
             if (Directory.Exists(path))
                 ClearDirectory(path);
@@ -54,7 +54,7 @@ namespace Koek
         /// </summary>
         private static void ClearDirectory(string path)
         {
-            Helpers.Argument.ValidateIsNotNullOrWhitespace(path, "path");
+            Helpers.Argument.ValidateIsNotNullOrWhitespace(path, nameof(path));
 
             DirectoryInfo target = new DirectoryInfo(path);
 
@@ -76,8 +76,8 @@ namespace Koek
         /// </summary>
         public static void CopyFiles(this HelpersContainerClasses.Filesystem container, string from, string to, string searchPattern = "*", bool recursive = false, bool overwrite = false)
         {
-            Helpers.Argument.ValidateIsNotNullOrWhitespace(from, "from");
-            Helpers.Argument.ValidateIsNotNullOrWhitespace(to, "to");
+            Helpers.Argument.ValidateIsNotNullOrWhitespace(from, nameof(from));
+            Helpers.Argument.ValidateIsNotNullOrWhitespace(to, nameof(to));
 
             var directorySeparatorChars = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 
@@ -91,7 +91,7 @@ namespace Koek
                 searchPattern = "*";
 
             if (!Directory.Exists(from))
-                throw new ArgumentException("The directory to copy files from does not exist.", "from");
+                throw new ArgumentException("The directory to copy files from does not exist.", nameof(from));
 
             var files = Directory.GetFiles(from, searchPattern, recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
 
@@ -104,7 +104,8 @@ namespace Koek
                 var newPath = file.Replace(from, to);
 
                 // Ensure that the directory exists.
-                Directory.CreateDirectory(Path.GetDirectoryName(newPath));
+                // Directory cannot be null, since that would mean it's not rooted, which is impossible because we got it from GetFiles().
+                Directory.CreateDirectory(Path.GetDirectoryName(newPath)!);
 
                 File.Copy(file, newPath, overwrite);
             }
@@ -117,17 +118,17 @@ namespace Koek
         /// </summary>
         public static string RemoveRoot(this HelpersContainerClasses.Filesystem container, string path, string root)
         {
-            Helpers.Argument.ValidateIsNotNullOrWhitespace(path, "path");
-            Helpers.Argument.ValidateIsNotNullOrWhitespace(root, "root");
+            Helpers.Argument.ValidateIsNotNullOrWhitespace(path, nameof(path));
+            Helpers.Argument.ValidateIsNotNullOrWhitespace(root, nameof(root));
 
             if (!Path.IsPathRooted(path))
-                throw new ArgumentException("Path must be rooted.", "path");
+                throw new ArgumentException("Path must be rooted.", nameof(path));
 
             if (!Path.IsPathRooted(root))
-                throw new ArgumentException("Root path must be rooted.", "root");
+                throw new ArgumentException("Root path must be rooted.", nameof(root));
 
             if (!path.StartsWith(root))
-                throw new ArgumentException("Path does not start with item root path.", "path");
+                throw new ArgumentException("Path does not start with item root path.", nameof(path));
 
             var relativePath = path.Substring(root.Length);
             relativePath = relativePath.Trim(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
@@ -181,7 +182,9 @@ namespace Koek
 
             // Maybe some types of projects still get it wrong here but we'll see when we get to it.
 
+#pragma warning disable SYSLIB0012 // Type or member is obsolete
             return Path.GetDirectoryName(new Uri(assembly.CodeBase!).LocalPath)!;
+#pragma warning restore SYSLIB0012 // Type or member is obsolete
         }
     }
 }

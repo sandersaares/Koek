@@ -12,6 +12,6 @@
     <license type="expression">MIT</license>
   </metadata>
   <files>
-    <file src="Koek/bin/Release/netcoreapp3.1/Koek.*" target="lib/netcoreapp3.1" />
+    <file src="Koek/bin/Release/net5.0/Koek.*" target="lib/net5.0" />
   </files>
 </package>

@@ -58,15 +58,13 @@ namespace Koek
         /// Logs any exceptions from the task to the trace log of the provided type.
         /// If an exception occurs, returns the default value of the result type.
         /// </summary>
-        public static Task<TResult> LogExceptionsAndReturnDefault<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
+        public static Task<TResult?> LogExceptionsAndReturnDefault<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
         {
             if (t.Exception == null)
                 return t.Result;
 
             Helpers.Trace<TTrace>.Error(t.Exception.ToString());
-#pragma warning disable CS8603 // Possible null reference return.
             return default;
-#pragma warning restore CS8603 // Possible null reference return.
         });
 
         /// <summary>

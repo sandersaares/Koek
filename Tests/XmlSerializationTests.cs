@@ -23,16 +23,19 @@ namespace Tests
 
             string xml = Helpers.XmlSerialization.XmlSerialize(input);
 
-            MyClass result = Helpers.XmlSerialization.XmlDeserialize<MyClass>(xml);
+            MyClass? result = Helpers.XmlSerialization.XmlDeserialize<MyClass>(xml);
 
             // If you do not know the type beforehand, you can provide a Type parameter.
             Type dataType = typeof(MyClass); // Pretend this comes from configuration or something.
-            object alternativeResult = Helpers.XmlSerialization.XmlDeserialize(xml, dataType);
+            object? alternativeResult = Helpers.XmlSerialization.XmlDeserialize(xml, dataType);
             #endregion
 
-            Assert.AreEqual(input.MyProperty, result.MyProperty);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(input.MyProperty, result!.MyProperty);
+
+            Assert.IsNotNull(alternativeResult);
             Assert.IsInstanceOfType(alternativeResult, typeof(MyClass));
-            Assert.AreEqual(input.MyProperty, ((MyClass)alternativeResult).MyProperty);
+            Assert.AreEqual(input.MyProperty, ((MyClass)alternativeResult!).MyProperty);
         }
 
         [TestMethod]

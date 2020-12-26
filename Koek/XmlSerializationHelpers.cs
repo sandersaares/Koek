@@ -51,33 +51,32 @@ namespace Koek
             Helpers.Argument.ValidateIsNotNull(obj, nameof(obj));
 
             var serializer = new XmlSerializer(obj.GetType());
-            using (var stream = new MemoryStream())
+            using var stream = new MemoryStream();
+
+            var writer = XmlWriter.Create(stream, new XmlWriterSettings
             {
-                var writer = XmlWriter.Create(stream, new XmlWriterSettings
-                {
-                    Encoding = Encoding.UTF8,
-                    IndentChars = "\t",
-                    Indent = true
-                });
+                Encoding = Encoding.UTF8,
+                IndentChars = "\t",
+                Indent = true
+            });
 
-                if ((flags & XmlSerializationFlags.ClearNamespaceDefinitions) == XmlSerializationFlags.ClearNamespaceDefinitions)
-                {
-                    var namespaces = new XmlSerializerNamespaces();
-                    namespaces.Add("", "");
+            if ((flags & XmlSerializationFlags.ClearNamespaceDefinitions) == XmlSerializationFlags.ClearNamespaceDefinitions)
+            {
+                var namespaces = new XmlSerializerNamespaces();
+                namespaces.Add("", "");
 
-                    serializer.Serialize(writer, obj, namespaces);
-                }
-                else
-                {
-                    serializer.Serialize(writer, obj);
-                }
-
-                writer.Flush();
-                stream.Seek(0, SeekOrigin.Begin);
-
-                var reader = new StreamReader(stream, Encoding.UTF8);
-                return reader.ReadToEnd();
+                serializer.Serialize(writer, obj, namespaces);
             }
+            else
+            {
+                serializer.Serialize(writer, obj);
+            }
+
+            writer.Flush();
+            stream.Seek(0, SeekOrigin.Begin);
+
+            var reader = new StreamReader(stream, Encoding.UTF8);
+            return reader.ReadToEnd();
         }
 
         /// <summary>
@@ -88,7 +87,7 @@ namespace Koek
         /// It is your responsibility to ensure that the XML is loaded into the string with the correct reader encoding.
         /// </remarks>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="xml"/> is null.</exception>
-        public static TObject XmlDeserialize<TObject>(this HelpersContainerClasses.XmlSerialization container, string xml)
+        public static TObject? XmlDeserialize<TObject>(this HelpersContainerClasses.XmlSerialization container, string xml)
         {
             return (TObject)Helpers.XmlSerialization.XmlDeserialize(xml, typeof(TObject));
         }
@@ -102,14 +101,14 @@ namespace Koek
         /// </remarks>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="xml"/> is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="type"/> is null.</exception>
-        public static object XmlDeserialize(this HelpersContainerClasses.XmlSerialization container, string xml, Type type)
+        public static object? XmlDeserialize(this HelpersContainerClasses.XmlSerialization container, string xml, Type type)
         {
             Helpers.Argument.ValidateIsNotNull(xml, nameof(xml));
             Helpers.Argument.ValidateIsNotNull(type, nameof(type));
 
             var serializer = new XmlSerializer(type);
-            using (var reader = new StringReader(xml))
-                return serializer.Deserialize(reader);
+            using var reader = new StringReader(xml);
+            return serializer.Deserialize(reader);
         }
     }
 }
