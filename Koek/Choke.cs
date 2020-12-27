@@ -15,7 +15,7 @@ namespace Koek
         /// This just matters for the first burst after a pause in transmissions.
         /// This pause may be intentional (ran out of data to send) or forced (CPU overload - big interval).
         /// </remarks>
-        private static readonly TimeSpan BucketSize = TimeSpan.FromSeconds(0.25);
+        private static readonly TimeSpan BucketSize = TimeSpan.FromSeconds(0.05);
 
         /// <summary>
         /// We refill the bucket only in steps this big, for easier calculations (avoid messing with fractions).
@@ -26,13 +26,13 @@ namespace Koek
 
         public long BucketSizeBytes { get; }
 
-        public Choke(DataRate targetRate, IStopwatch stopwatch)
+        public Choke(DataRate targetRate, IStopwatch? stopwatch = null)
         {
             Helpers.Argument.ValidateRange(targetRate.BytesPerSecond, nameof(targetRate.BytesPerSecond), min: 1);
 
             RateLimit = targetRate;
 
-            _stopwatch = stopwatch;
+            _stopwatch = stopwatch ?? new RealStopwatch();
 
             BucketSizeBytes = (long)(targetRate.BytesPerSecond * BucketSize.TotalSeconds);
             _availableCapacity = BucketSizeBytes;
