@@ -45,6 +45,17 @@ namespace Koek
             return _entries.DefaultIfEmpty().Select(x => x?.Value).Average();
         }
 
+        /// <summary>
+        /// Gets the number of entries within the window.
+        /// </summary>
+        public int GetEntryCount()
+        {
+            // Before reading, prune any old items.
+            Prune();
+
+            return _entries.Count;
+        }
+
         public void Observe(double value)
         {
             // It makes little sense to calculate a moving average using NaN or Infinity so throw when given them.
