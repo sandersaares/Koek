@@ -1,98 +1,91 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Koek
 {
     /// <summary>
-    /// A collection where entries expire some time after they are added.
+    /// A FIFO collection that holds items for a certain duration, after which they are evicted.
     /// </summary>
     /// <remarks>
-    /// This collection is not thread-safe.
+    /// Thread-safe.
     /// 
-    /// For ease of testability and memory management the expiration must be explicitly triggered
-    /// by calling RemoveOlderThan(). Without this call, items never expire.
+    /// Evictions typically happen inline with read operations.
     /// </remarks>
-    public sealed class ExpiringCollection<T> : ICollection<T>
+    public sealed class ExpiringCollection<T> : IEnumerable<T>
     {
-        public ExpiringCollection(Func<IStopwatch> stopwatchFactory)
+        public ExpiringCollection(TimeSpan itemLifetime)
         {
-            _stopwatchFactory = stopwatchFactory;
+            _itemLifetime = itemLifetime;
         }
 
-        private readonly Func<IStopwatch> _stopwatchFactory;
+        private readonly TimeSpan _itemLifetime;
 
-        private readonly List<(T item, IStopwatch age)> _records = new List<(T item, IStopwatch age)>();
+        private readonly ConcurrentQueue<Entry> _entries = new();
+
+        // Protects against concurrent pruning. Other operations are lock-free.
+        private readonly object _pruneLock = new();
+
+        private sealed record Entry(T Value, IStopwatch Lifetime);
+
+        private void Prune()
+        {
+            lock (_pruneLock)
+            {
+                while (_entries.TryPeek(out var first) && first.Lifetime.Elapsed > _itemLifetime)
+                    _entries.TryDequeue(out _);
+            }
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            // Before read operation, prune expired items.
+            Prune();
+
+            return GetValuesInternal().GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <summary>
-        /// Removes and returns items that have an age older than the provided timespan.
+        /// Direct access to the values set, exposed for testing purposes only.
         /// </summary>
-        public IEnumerable<T> RemoveOlderThan(TimeSpan age)
+        internal IEnumerable<T> GetValuesInternal()
         {
-            var removed = new List<T>();
-            _records.RemoveAll(candidate =>
-            {
-                if (candidate.age.Elapsed <= age)
-                    return false;
-
-                removed.Add(candidate.item);
-
-                return true;
-            });
-
-            return removed;
-        }
-
-        public void Refresh(T item)
-        {
-            foreach (var record in _records)
-            {
-                if (!Equals(record.item, item))
-                    continue;
-
-                record.age.Restart();
-                return;
-            }
+            return _entries.Select(x => x.Value);
         }
 
         public void Add(T item)
         {
-            _records.Add((item, _stopwatchFactory()));
+            _entries.Enqueue(new Entry(item, _stopwatchFactory()));
+
+            // Due to concurrently, this might not hit 100% of times but that's fine - it is just a backstop to prevent runaway allocation.
+            if (_entries.Count % AddPruneThreshold == 0)
+                Prune();
         }
 
-        public int Count => _records.Count;
-
-        public bool IsReadOnly => false;
-
-        public void Clear() => _records.Clear();
-
-        public bool Contains(T item) => _records.Any(r => Equals(r.item, item));
-
-        public bool Remove(T item)
+        public void Clear()
         {
-            foreach (var record in _records)
-            {
-                if (Equals(record.item, item))
-                {
-                    _records.Remove(record);
-                    return true;
-                }
-            }
-
-            return false;
+            _entries.Clear();
         }
 
-        public IEnumerator<T> GetEnumerator() => _records.Select(record => record.item).GetEnumerator();
-
-        public void CopyTo(T[] array, int arrayIndex)
+        public int GetCount()
         {
-            for (var i = 0; i < Count; i++)
-            {
-                array[i + arrayIndex] = _records[i].item;
-            }
+            // Before read operation, prune expired items.
+            Prune();
+
+            return _entries.Count;
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => throw new NotSupportedException();
+        // Internal for testing purposes only.
+        internal Func<IStopwatch> _stopwatchFactory = () => new RealStopwatch();
+
+        /// <summary>
+        /// For every multiple of this, we prune even on Add().
+        /// Typical behavior is only to prune when reading but if no read operation is ever done, we still need to prune occasionally!
+        /// </summary>
+        internal const int AddPruneThreshold = 100;
     }
 }
