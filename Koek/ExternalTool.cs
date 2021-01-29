@@ -211,7 +211,7 @@ namespace Koek
                 {
                     Trace.Verbose($"Terminating due to timeout.");
 
-                    _process.Kill();
+                    _process.Kill(true);
 
                     // Wait for result to be available so that all the output gets written to file.
                     // This may not work if something is very wrong, but we do what we can to help.
@@ -238,7 +238,7 @@ namespace Koek
                     Trace.Verbose($"Terminating due to cancellation.");
 
                     // If a cancellation is signaled, we need to kill the process and set error to really time it out.
-                    _process.Kill();
+                    _process.Kill(true);
 
                     // Wait for result to be available so that all the output gets written to file.
                     // This may not work if something is very wrong, but we do what we can to help.
