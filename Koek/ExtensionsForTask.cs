@@ -144,5 +144,49 @@ namespace Koek
 
             return task.ContinueWith(completedTask => completedTask.WaitAndUnwrapExceptions(), cancellationToken, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         }
+
+        public static async Task IgnoreExceptionsAsync(this Task t)
+        {
+            try
+            {
+                await t;
+            }
+            catch
+            {
+            }
+        }
+
+        public static async Task IgnoreExceptionsAsync<T>(this Task<T> t)
+        {
+            try
+            {
+                await t;
+            }
+            catch
+            {
+            }
+        }
+
+        public static async ValueTask IgnoreExceptionsAsync(this ValueTask t)
+        {
+            try
+            {
+                await t;
+            }
+            catch
+            {
+            }
+        }
+
+        public static async ValueTask IgnoreExceptionsAsync<T>(this ValueTask<T> t)
+        {
+            try
+            {
+                await t;
+            }
+            catch
+            {
+            }
+        }
     }
 }
