@@ -100,6 +100,7 @@ namespace Koek
         /// * is not abstract;
         /// * has at least one public constructor (does not need to be parameterless).
         /// </remarks>
+        /// <param name="container"></param>
         public static bool IsPotentiallyConstructibleType(this HelpersContainerClasses.Type container, string typeName)
         {
             return Helpers.Type.IsPotentiallyConstructibleType(typeName, null);
@@ -124,6 +125,7 @@ namespace Koek
         /// * is not abstract;
         /// * has at least one public constructor (does not need to be parameterless).
         /// </remarks>
+        /// <param name="container"></param>
         public static bool IsPotentiallyConstructibleType(this HelpersContainerClasses.Type container, string typeName, Type? requiredAspect)
         {
             if (string.IsNullOrEmpty(typeName))

@@ -206,6 +206,7 @@ namespace Koek
         /// A hex string with no delimiting characters (e.g. "aabbcc8811").
         /// Both uppercase and lowercase may be used.
         /// </param>
+        /// <param name="container"></param>
         public static byte[] HexStringToByteArray(this HelpersContainerClasses.Convert container, string hexString)
         {
             Helpers.Argument.ValidateIsNotNull(hexString, "hexString");
