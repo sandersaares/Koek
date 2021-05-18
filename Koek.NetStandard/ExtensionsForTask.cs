@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Koek
@@ -19,12 +19,12 @@ namespace Koek
         /// Logs any exceptions from the task to the trace log of the provided type.
         /// After logging, the exception is wrapped in an AggregateException and re-thrown.
         /// </summary>
-        public static Task LogExceptionsAndRethrow<TTrace>(this Task task) => task.ContinueWith(t =>
+        public static Task LogExceptionsAndRethrow(this Task task, ILogger logger) => task.ContinueWith(t =>
         {
             if (t.Exception == null)
                 return Task.CompletedTask;
 
-            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            logger.LogError(t.Exception, "{ErrorMessage}", t.Exception.Message);
             throw new AggregateException(t.Exception);
         });
 
@@ -32,12 +32,12 @@ namespace Koek
         /// Logs any exceptions from the task to the trace log of the provided type.
         /// After logging, the exception is wrapped in an AggregateException and re-thrown.
         /// </summary>
-        public static Task<TResult> LogExceptionsAndRethrow<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
+        public static Task<TResult> LogExceptionsAndRethrow<TResult>(this Task<TResult> task, ILogger logger) => task.ContinueWith(t =>
         {
             if (t.Exception == null)
                 return t.Result;
 
-            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            logger.LogError(t.Exception, "{ErrorMessage}", t.Exception.Message);
             throw new AggregateException(t.Exception);
         });
 
@@ -45,12 +45,12 @@ namespace Koek
         /// Logs any exceptions from the task to the trace log of the provided type.
         /// Beyond logging, exceptions are ignored.
         /// </summary>
-        public static Task LogExceptionsAndIgnore<TTrace>(this Task task) => task.ContinueWith(t =>
+        public static Task LogExceptionsAndIgnore(this Task task, ILogger logger) => task.ContinueWith(t =>
         {
             if (t.Exception == null)
                 return Task.CompletedTask;
 
-            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            logger.LogError(t.Exception, "{ErrorMessage}", t.Exception.Message);
             return Task.CompletedTask;
         });
 
@@ -58,12 +58,12 @@ namespace Koek
         /// Logs any exceptions from the task to the trace log of the provided type.
         /// If an exception occurs, returns the default value of the result type.
         /// </summary>
-        public static Task<TResult?> LogExceptionsAndReturnDefault<TTrace, TResult>(this Task<TResult> task) => task.ContinueWith(t =>
+        public static Task<TResult?> LogExceptionsAndReturnDefault<TResult>(this Task<TResult> task, ILogger logger) => task.ContinueWith(t =>
         {
             if (t.Exception == null)
                 return t.Result;
 
-            Helpers.Trace<TTrace>.Error(t.Exception.ToString());
+            logger.LogError(t.Exception, "{ErrorMessage}", t.Exception.Message);
             return default;
         });
 
@@ -111,40 +111,6 @@ namespace Koek
             return task.GetAwaiter().GetResult();
         }
 
-        /// <summary>
-        /// Abandons the task after a cancellation is signaled and throws TaskCanceledException.
-        /// The task continues to run in reality but will appear cancelled to any callers.
-        /// </summary>
-        /// <exception cref="TaskCanceledException">Thrown when the task is abandoned.</exception>
-        public static Task<T> WithAbandonment<T>(this Task<T> task, CancellationToken cancellationToken)
-        {
-            Helpers.Argument.ValidateIsNotNull(task, nameof(task));
-
-            if (task.IsCompleted)
-                return task;
-
-            // From https://stackoverflow.com/questions/25219287/c-sharp-net-httpclient-cancel-readasstringasync
-
-            return task.ContinueWith(completedTask => completedTask.WaitAndUnwrapExceptions(), cancellationToken, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        }
-
-        /// <summary>
-        /// Abandons the task after a cancellation is signaled and throws TaskCanceledException.
-        /// The task continues to run in reality but will appear cancelled to any callers.
-        /// </summary>
-        /// <exception cref="TaskCanceledException">Thrown when the task is abandoned.</exception>
-        public static Task WithAbandonment(this Task task, CancellationToken cancellationToken)
-        {
-            Helpers.Argument.ValidateIsNotNull(task, nameof(task));
-
-            if (task.IsCompleted)
-                return task;
-
-            // From https://stackoverflow.com/questions/25219287/c-sharp-net-httpclient-cancel-readasstringasync
-
-            return task.ContinueWith(completedTask => completedTask.WaitAndUnwrapExceptions(), cancellationToken, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        }
-
         public static async Task IgnoreExceptionsAsync(this Task t)
         {
             try
@@ -157,28 +123,6 @@ namespace Koek
         }
 
         public static async Task IgnoreExceptionsAsync<T>(this Task<T> t)
-        {
-            try
-            {
-                await t;
-            }
-            catch
-            {
-            }
-        }
-
-        public static async ValueTask IgnoreExceptionsAsync(this ValueTask t)
-        {
-            try
-            {
-                await t;
-            }
-            catch
-            {
-            }
-        }
-
-        public static async ValueTask IgnoreExceptionsAsync<T>(this ValueTask<T> t)
         {
             try
             {

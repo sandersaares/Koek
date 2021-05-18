@@ -28,7 +28,17 @@ namespace Koek
         // Protects against concurrent pruning. Other operations are lock-free.
         private readonly object _pruneLock = new();
 
-        private sealed record Entry(T Value, IStopwatch Lifetime);
+        private sealed class Entry
+        {
+            public T Value { get; }
+            public IStopwatch Lifetime { get; }
+
+            public Entry(T value, IStopwatch lifetime)
+            {
+                Value = value;
+                Lifetime = lifetime;
+            }
+        }
 
         private void Prune()
         {
@@ -68,7 +78,9 @@ namespace Koek
 
         public void Clear()
         {
-            _entries.Clear();
+            while (_entries.TryDequeue(out _))
+            {
+            }
         }
 
         public int GetCount()

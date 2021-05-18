@@ -1,4 +1,5 @@
 ﻿using Koek;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Diagnostics;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 namespace Tests
 {
     [TestClass]
-    public sealed class ExternalToolTests : BaseTestClass
+    public sealed class ExternalToolTests : KoekTests
     {
         private static readonly TimeSpan ExecuteTimeout = TimeSpan.FromSeconds(5);
 
@@ -378,11 +379,11 @@ namespace Tests
                         {
                             while (true)
                             {
-                                Helpers.Trace<ExternalToolTests>.Verbose("Reading more bytes.");
+                                _logger.LogDebug("Reading more bytes.");
 
                                 var bytes = s.Read(readBuffer, 0, readBuffer.Length);
 
-                                Helpers.Trace<ExternalToolTests>.Verbose($"Read {bytes} bytes.");
+                                _logger.LogDebug($"Read {bytes} bytes.");
 
                                 if (bytes == 0)
                                 {
@@ -397,11 +398,11 @@ namespace Tests
                     }
                 }.Execute(TimeSpan.FromSeconds(30));
 
-                Helpers.Trace<ExternalToolTests>.Verbose($"Read {readData?.Length} bytes out of expected {data.Length}.");
-                Helpers.Trace<ExternalToolTests>.Verbose($"First 64 written bytes: {Helpers.Convert.ByteArrayToHexString(data.Take(64).ToArray())}");
+                _logger.LogDebug($"Read {readData?.Length} bytes out of expected {data.Length}.");
+                _logger.LogDebug($"First 64 written bytes: {Helpers.Convert.ByteArrayToHexString(data.Take(64).ToArray())}");
 
                 if (readData != null)
-                    Helpers.Trace<ExternalToolTests>.Verbose($"First 64 read bytes: {Helpers.Convert.ByteArrayToHexString(readData.Take(64).ToArray())}");
+                    _logger.LogDebug($"First 64 read bytes: {Helpers.Convert.ByteArrayToHexString(readData.Take(64).ToArray())}");
 
                 CollectionAssert.AreEqual(data, readData);
             }

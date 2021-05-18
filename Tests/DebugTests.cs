@@ -1,4 +1,5 @@
 ﻿using Koek;
+using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Linq;
 namespace Tests
 {
     [TestClass]
-    public sealed class DebugTests : BaseTestClass
+    public sealed class DebugTests : KoekTests
     {
         [TestMethod]
         public void GetAllExceptionMessages_DoesWhatItSays()
@@ -119,7 +120,7 @@ namespace Tests
             var o = new TestClassObject();
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.IsTrue(output.Contains(GuidValue.ToString()));
         }
@@ -130,7 +131,7 @@ namespace Tests
             var o = new TestClassObject();
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.IsTrue(output.Contains(StringValue));
         }
@@ -146,7 +147,7 @@ namespace Tests
             o.StringProperty = canary;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             var first = output.IndexOf(canary);
             var last = output.LastIndexOf(canary);
@@ -176,7 +177,7 @@ namespace Tests
             o.SomeStructObject = s;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.IsTrue(output.Contains(canary1));
             Assert.IsTrue(output.Contains(canary2));
@@ -191,7 +192,7 @@ namespace Tests
             var expected = o.ToString("s") + Environment.NewLine;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.AreEqual(expected, output);
         }
@@ -204,7 +205,7 @@ namespace Tests
             var expected = o.ToString("u") + Environment.NewLine;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.AreEqual(expected, output);
         }
@@ -217,7 +218,7 @@ namespace Tests
             var expected = o + Environment.NewLine;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.AreEqual(expected, output);
         }
@@ -230,7 +231,7 @@ namespace Tests
             var expected = o + Environment.NewLine;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.AreEqual(expected, output);
         }
@@ -241,7 +242,7 @@ namespace Tests
             var o = new KeyValuePair<string, DebugTests?>("asdfasdf", null);
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.IsFalse(output.Contains(typeof(DebugTests).Name));
         }
@@ -252,7 +253,7 @@ namespace Tests
             var o = Guid.Empty;
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             // Guid.Empty leads to a new instance.
             // As long as we have "Empty" only once, we know a second instance was not printed.
@@ -265,7 +266,7 @@ namespace Tests
             var o = new byte[1234];
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             StringAssert.Contains(output, "1234");
         }
@@ -283,7 +284,7 @@ namespace Tests
             };
 
             var output = Helpers.Debug.ToDebugString(o);
-            Helpers.Trace<DebugTests>.Verbose(output);
+            _logger.LogDebug(output);
 
             Assert.IsTrue(output.Contains(baseCanary));
             Assert.IsTrue(output.Contains(derivedCanary));

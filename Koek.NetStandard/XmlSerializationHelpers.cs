@@ -89,7 +89,7 @@ namespace Koek
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="xml"/> is null.</exception>
         public static TObject? XmlDeserialize<TObject>(this HelpersContainerClasses.XmlSerialization container, string xml)
         {
-            return (TObject)Helpers.XmlSerialization.XmlDeserialize(xml, typeof(TObject));
+            return (TObject?)Helpers.XmlSerialization.XmlDeserialize(xml, typeof(TObject));
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
+using System.Globalization;
 
 namespace Koek
 {
@@ -18,7 +20,7 @@ namespace Koek
         public TimeSpan Duration { get; }
 
         // We use this to report some configuration but be careful - the instance itself might already be disposed!
-        private ExternalTool.Instance _instance;
+        private readonly ExternalTool.Instance _instance;
 
         /// <summary>
         /// Forwards the external tool's standard output to the current app's standard output.
@@ -26,10 +28,10 @@ namespace Koek
         public void ForwardOutputs()
         {
             if (!string.IsNullOrWhiteSpace(StandardOutput))
-                _instance.Trace.Verbose($"Captured standard output stream: " + StandardOutput);
+                _instance.Logger.LogDebug("Captured standard output stream: {StandardOutput}", StandardOutput);
 
             if (!string.IsNullOrWhiteSpace(StandardError))
-                _instance.Trace.Verbose($"Captured standard error stream: " + StandardError);
+                _instance.Logger.LogDebug("Captured standard error stream: {StandardError}", StandardError);
         }
 
         /// <summary>
@@ -40,7 +42,7 @@ namespace Koek
             ForwardOutputs();
             VerifySuccess();
 
-            _instance.Trace.Verbose($"Finished in {Duration.TotalSeconds:F2}s.");
+            _instance.Logger.LogDebug("Finished in {ExternalToolDuration}s.", Duration.TotalSeconds.ToString("F2", CultureInfo.InvariantCulture));
         }
 
         /// <summary>

@@ -1,0 +1,18 @@
+root = true
+
+[*.cs]
+indent_style = space
+indent_size = 4
+
+# Some of the VS analyzers do nothing beyond advertising new fancy features.
+# There are places where these are appropriate and places where they are not.
+# Disable these rules so they do not spam the user with irrelevant messages that are not worthy of attention.
+#
+# IDE0066: Convert switch statement to expression
+dotnet_diagnostic.IDE0066.severity = silent
+# IDE0057: Use range operator
+dotnet_diagnostic.IDE0057.severity = silent
+# IDE0063: Use simple 'using' statement
+dotnet_diagnostic.IDE0063.severity = silent
+# IDE0090: 'new' expression can be simplified
+dotnet_diagnostic.IDE0090.severity = silent

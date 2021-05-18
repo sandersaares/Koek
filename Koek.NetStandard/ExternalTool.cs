@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Nito.AsyncEx;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -89,12 +92,17 @@ namespace Koek
         public bool CaptureOutputStreamsToString { get; set; } = true;
 
         /// <summary>
+        /// Set to something non-null if you want diagnostic output to be logged from tool execution.
+        /// </summary>
+        public ILoggerFactory? LoggerFactory { get; set; }
+
+        /// <summary>
         /// Starts a new instance of the external tool. Use this if you want more detailed control over the process
         /// e.g. the ability to terminate it or to inspect the running process. Otherwise, just use the synchronous Execute().
         /// </summary>
         public Instance Start()
         {
-            return new Instance(this);
+            return new Instance(this, LoggerFactory);
         }
 
         /// <summary>
@@ -189,13 +197,13 @@ namespace Koek
                     }
                     catch (Exception ex)
                     {
-                        Trace.Error($"Unable to read process status: {ex}");
+                        Logger.LogError(ex, "Unable to read process status: {ErrorMessage}", ex.Message);
                         return false;
                     }
                 }
             }
 
-            internal TraceWriter Trace { get; }
+            internal ILogger Logger { get; }
 
             private readonly Process _process;
             private readonly string _shortName;
@@ -209,9 +217,9 @@ namespace Koek
             {
                 if (!_result.Task.Wait(timeout))
                 {
-                    Trace.Verbose($"Terminating due to timeout.");
+                    Logger.LogDebug($"Terminating due to timeout.");
 
-                    _process.Kill(true);
+                    _process.Kill();
 
                     // Wait for result to be available so that all the output gets written to file.
                     // This may not work if something is very wrong, but we do what we can to help.
@@ -231,21 +239,21 @@ namespace Koek
             {
                 try
                 {
-                    return await _result.Task.WithAbandonment(cancel);
+                    return await _result.Task.WaitAsync(cancel);
                 }
                 catch (TaskCanceledException)
                 {
-                    Trace.Verbose($"Terminating due to cancellation.");
+                    Logger.LogDebug("Terminating due to cancellation.");
 
                     // If a cancellation is signaled, we need to kill the process and set error to really time it out.
-                    _process.Kill(true);
+                    _process.Kill();
 
                     // Wait for result to be available so that all the output gets written to file.
                     // This may not work if something is very wrong, but we do what we can to help.
                     try
                     {
                         using var lastResort = new CancellationTokenSource(LastResortTimeout);
-                        await _result.Task.WithAbandonment(lastResort.Token);
+                        await _result.Task.WaitAsync(lastResort.Token);
                     }
                     catch
                     {
@@ -261,12 +269,12 @@ namespace Koek
             private readonly Action<Stream>? _standardInputProvider;
             private readonly Action<Stream>? _standardErrorConsumer;
 
-            private readonly TaskCompletionSource<ExternalToolResult> _result = new TaskCompletionSource<ExternalToolResult>();
+            private readonly TaskCompletionSource<ExternalToolResult> _result = new();
 
             /// <summary>
             /// Creates a new instance of an external tool, using the specified template. Does not start it yet.
             /// </summary>
-            internal Instance(ExternalTool template)
+            internal Instance(ExternalTool template, ILoggerFactory? loggerFactory)
             {
                 Helpers.Argument.ValidateIsNotNull(template, nameof(template));
 
@@ -277,15 +285,19 @@ namespace Koek
                     throw new ArgumentException("The working directory does not exist.", nameof(template));
 
                 _shortName = Path.GetFileName(template.ExecutablePath);
-                Trace = TraceWriter.ForTypeAndSubcategory<ExternalTool>(_shortName);
 
-                var executablePath = template.ExecutablePath;
+                if (loggerFactory == null)
+                    Logger = NullLogger.Instance;
+                else
+                    Logger = loggerFactory.CreateLogger(_shortName);
+
+                var executablePath = template.ExecutablePath!;
 
                 // First, resolve the path.
                 if (!Path.IsPathRooted(executablePath))
                 {
                     var resolvedPath = Helpers.Filesystem.ResolvePath(executablePath);
-                    Trace.Verbose($"{executablePath} resolved to {resolvedPath}");
+                    Logger.LogDebug("{ExecutablePath} resolved to {ResolvedPath}", executablePath, resolvedPath);
 
                     executablePath = resolvedPath;
                 }
@@ -380,12 +392,12 @@ namespace Koek
                 /// <summary>
                 /// We only want one thread to be touching the error mode at the same time.
                 /// </summary>
-                private static readonly object _errorModeLock = new object();
+                private static readonly object _errorModeLock = new();
             }
 
             internal Process Start()
             {
-                Trace.Verbose($"Executing: {ExecutablePath} {CensoredArguments}");
+                Logger.LogDebug("Executing: {ExecutablePath} {CensoredArguments}", ExecutablePath, CensoredArguments);
 
                 // We write both stderr and stdout to the output file, line by line.
                 // If you need to make a distinction, capture the streams yourself.
@@ -425,7 +437,7 @@ namespace Koek
                     using (new CrashDialogSuppressionBlock())
                         process = Process.Start(startInfo) ?? throw new ContractException("Process.Start() unexpectedly returned null.");
 
-                    Trace.Verbose("Process started.");
+                    Logger.LogDebug("Process started.");
 
                     try
                     {
@@ -459,7 +471,7 @@ namespace Koek
                             }
                             catch (Exception ex)
                             {
-                                Trace.Error($"Caller-provided stderr consumer crashed! {ex}");
+                                Logger.LogError(ex, "Caller-provided stderr consumer crashed: {ErrorMessage}", ex.Message);
                                 process.StandardError.Close();
                                 throw;
                             }
@@ -508,7 +520,7 @@ namespace Koek
                             }
                             catch (Exception ex)
                             {
-                                Trace.Error($"Caller-provided stdout consumer crashed! {ex}");
+                                Logger.LogError(ex, "Caller-provided stdout consumer crashed: {ErrorMessage}", ex.Message);
                                 process.StandardOutput.Close();
                                 throw;
                             }
@@ -559,7 +571,7 @@ namespace Koek
                             }
                             catch (Exception ex)
                             {
-                                Trace.Error($"Caller-provided stdin provider crashed! {ex}");
+                                Logger.LogError(ex, "Caller-provided stdin provider crashed: {ErrorMessage}", ex.Message);
                                 throw;
                             }
                         })
@@ -574,7 +586,7 @@ namespace Koek
                         try
                         {
                             process.WaitForExit();
-                            Trace.Verbose("Process exited.");
+                            Logger.LogDebug("Process exited.");
 
                             var exitCode = process.ExitCode;
                             runtime.Stop();
@@ -593,7 +605,7 @@ namespace Koek
                         }
                         catch (Exception ex)
                         {
-                            Trace.Error($"Failed to observe results. Process may remain running unobserved. {ex}");
+                            Logger.LogError(ex, "Failed to observe results. Process may remain running unobserved. {ErrorMessage}", ex.Message);
                             _result.TrySetException(ex);
                         }
                     })
